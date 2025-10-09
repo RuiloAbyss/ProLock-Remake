@@ -1,0 +1,739 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Unused terminals:
+
+    BIN
+    CADENA
+    CICLO
+    COMENTARIO
+    CONTADOR
+    DEC
+    ENT
+    FALSE
+    NO
+    RELOJ
+    SI
+    TEMPO
+    TRUE
+    opARITMETICO
+    opLOGICO
+
+Grammar
+
+Rule 0     S' -> programa
+Rule 1     programa -> PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE
+Rule 2     bloque_codigo -> declaracion
+Rule 3     bloque_codigo -> bloque_codigo declaracion
+Rule 4     declaracion -> constructor_base
+Rule 5     declaracion -> modificador_caracteristica
+Rule 6     declaracion -> rutina
+Rule 7     constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE
+Rule 8     bloque_caracteristicas -> caracteristica
+Rule 9     bloque_caracteristicas -> bloque_caracteristicas caracteristica
+Rule 10    caracteristica -> TIENE APERTURA bloque_tiene CIERRE
+Rule 11    caracteristica -> PUEDE APERTURA bloque_puede CIERRE
+Rule 12    bloque_tiene -> asignacion
+Rule 13    bloque_tiene -> bloque_tiene asignacion
+Rule 14    asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO
+Rule 15    assign_type -> IDENTIFICADOR
+Rule 16    assign_type -> EJE
+Rule 17    assign_type -> MOTORX
+Rule 18    assign_type -> MOTORY
+Rule 19    bloque_puede -> funcion
+Rule 20    bloque_puede -> bloque_puede funcion
+Rule 21    rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE
+Rule 22    funcion -> IDENTIFICADOR LPAREN argumentos RPAREN
+Rule 23    argumentos -> argumento
+Rule 24    argumentos -> argumentos COMA argumento
+Rule 25    argumento -> IDENTIFICADOR
+Rule 26    argumento -> NUMERO
+Rule 27    modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE
+Rule 28    modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE
+
+Terminals, with rules where they appear
+
+APERTURA             : 1 7 10 11 21 27 28
+BIN                  : 
+CADENA               : 
+CICLO                : 
+CIERRE               : 1 7 10 11 21 27 28
+COMA                 : 24
+COMENTARIO           : 
+CONTADOR             : 
+DEC                  : 
+EJE                  : 16
+ENT                  : 
+FALSE                : 
+IDENTIFICADOR        : 1 7 14 15 21 22 25 27 28
+IGUAL                : 14
+LPAREN               : 22
+MOTORX               : 17
+MOTORY               : 18
+NO                   : 
+NODO                 : 7
+NUMERO               : 14 26
+OBJETO               : 7
+PROG                 : 1
+PUEDE                : 11 28
+RELOJ                : 
+RPAREN               : 22
+RUTINA               : 21
+SI                   : 
+TEMPO                : 
+TIENE                : 10 27
+TRUE                 : 
+error                : 
+opARITMETICO         : 
+opLOGICO             : 
+
+Nonterminals, with rules where they appear
+
+argumento            : 23 24
+argumentos           : 22 24
+asignacion           : 12 13
+assign_type          : 14
+bloque_caracteristicas : 7 9
+bloque_codigo        : 1 3
+bloque_puede         : 11 20 21 28
+bloque_tiene         : 10 13 27
+caracteristica       : 8 9
+constructor_base     : 4
+declaracion          : 2 3
+funcion              : 19 20
+modificador_caracteristica : 5
+programa             : 0
+rutina               : 6
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . programa
+    (1) programa -> . PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE
+
+    PROG            shift and go to state 2
+
+    programa                       shift and go to state 1
+
+state 1
+
+    (0) S' -> programa .
+
+
+
+state 2
+
+    (1) programa -> PROG . IDENTIFICADOR APERTURA bloque_codigo CIERRE
+
+    IDENTIFICADOR   shift and go to state 3
+
+
+state 3
+
+    (1) programa -> PROG IDENTIFICADOR . APERTURA bloque_codigo CIERRE
+
+    APERTURA        shift and go to state 4
+
+
+state 4
+
+    (1) programa -> PROG IDENTIFICADOR APERTURA . bloque_codigo CIERRE
+    (2) bloque_codigo -> . declaracion
+    (3) bloque_codigo -> . bloque_codigo declaracion
+    (4) declaracion -> . constructor_base
+    (5) declaracion -> . modificador_caracteristica
+    (6) declaracion -> . rutina
+    (7) constructor_base -> . NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE
+    (27) modificador_caracteristica -> . IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE
+    (28) modificador_caracteristica -> . IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE
+    (21) rutina -> . RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE
+
+    NODO            shift and go to state 11
+    IDENTIFICADOR   shift and go to state 5
+    RUTINA          shift and go to state 12
+
+    bloque_codigo                  shift and go to state 6
+    declaracion                    shift and go to state 7
+    constructor_base               shift and go to state 8
+    modificador_caracteristica     shift and go to state 9
+    rutina                         shift and go to state 10
+
+state 5
+
+    (27) modificador_caracteristica -> IDENTIFICADOR . TIENE APERTURA bloque_tiene CIERRE
+    (28) modificador_caracteristica -> IDENTIFICADOR . PUEDE APERTURA bloque_puede CIERRE
+
+    TIENE           shift and go to state 13
+    PUEDE           shift and go to state 14
+
+
+state 6
+
+    (1) programa -> PROG IDENTIFICADOR APERTURA bloque_codigo . CIERRE
+    (3) bloque_codigo -> bloque_codigo . declaracion
+    (4) declaracion -> . constructor_base
+    (5) declaracion -> . modificador_caracteristica
+    (6) declaracion -> . rutina
+    (7) constructor_base -> . NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE
+    (27) modificador_caracteristica -> . IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE
+    (28) modificador_caracteristica -> . IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE
+    (21) rutina -> . RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE
+
+    CIERRE          shift and go to state 15
+    NODO            shift and go to state 11
+    IDENTIFICADOR   shift and go to state 5
+    RUTINA          shift and go to state 12
+
+    declaracion                    shift and go to state 16
+    constructor_base               shift and go to state 8
+    modificador_caracteristica     shift and go to state 9
+    rutina                         shift and go to state 10
+
+state 7
+
+    (2) bloque_codigo -> declaracion .
+
+    CIERRE          reduce using rule 2 (bloque_codigo -> declaracion .)
+    NODO            reduce using rule 2 (bloque_codigo -> declaracion .)
+    IDENTIFICADOR   reduce using rule 2 (bloque_codigo -> declaracion .)
+    RUTINA          reduce using rule 2 (bloque_codigo -> declaracion .)
+
+
+state 8
+
+    (4) declaracion -> constructor_base .
+
+    CIERRE          reduce using rule 4 (declaracion -> constructor_base .)
+    NODO            reduce using rule 4 (declaracion -> constructor_base .)
+    IDENTIFICADOR   reduce using rule 4 (declaracion -> constructor_base .)
+    RUTINA          reduce using rule 4 (declaracion -> constructor_base .)
+
+
+state 9
+
+    (5) declaracion -> modificador_caracteristica .
+
+    CIERRE          reduce using rule 5 (declaracion -> modificador_caracteristica .)
+    NODO            reduce using rule 5 (declaracion -> modificador_caracteristica .)
+    IDENTIFICADOR   reduce using rule 5 (declaracion -> modificador_caracteristica .)
+    RUTINA          reduce using rule 5 (declaracion -> modificador_caracteristica .)
+
+
+state 10
+
+    (6) declaracion -> rutina .
+
+    CIERRE          reduce using rule 6 (declaracion -> rutina .)
+    NODO            reduce using rule 6 (declaracion -> rutina .)
+    IDENTIFICADOR   reduce using rule 6 (declaracion -> rutina .)
+    RUTINA          reduce using rule 6 (declaracion -> rutina .)
+
+
+state 11
+
+    (7) constructor_base -> NODO . IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE
+
+    IDENTIFICADOR   shift and go to state 17
+
+
+state 12
+
+    (21) rutina -> RUTINA . IDENTIFICADOR APERTURA bloque_puede CIERRE
+
+    IDENTIFICADOR   shift and go to state 18
+
+
+state 13
+
+    (27) modificador_caracteristica -> IDENTIFICADOR TIENE . APERTURA bloque_tiene CIERRE
+
+    APERTURA        shift and go to state 19
+
+
+state 14
+
+    (28) modificador_caracteristica -> IDENTIFICADOR PUEDE . APERTURA bloque_puede CIERRE
+
+    APERTURA        shift and go to state 20
+
+
+state 15
+
+    (1) programa -> PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE .
+
+    $end            reduce using rule 1 (programa -> PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE .)
+
+
+state 16
+
+    (3) bloque_codigo -> bloque_codigo declaracion .
+
+    CIERRE          reduce using rule 3 (bloque_codigo -> bloque_codigo declaracion .)
+    NODO            reduce using rule 3 (bloque_codigo -> bloque_codigo declaracion .)
+    IDENTIFICADOR   reduce using rule 3 (bloque_codigo -> bloque_codigo declaracion .)
+    RUTINA          reduce using rule 3 (bloque_codigo -> bloque_codigo declaracion .)
+
+
+state 17
+
+    (7) constructor_base -> NODO IDENTIFICADOR . OBJETO APERTURA bloque_caracteristicas CIERRE
+
+    OBJETO          shift and go to state 21
+
+
+state 18
+
+    (21) rutina -> RUTINA IDENTIFICADOR . APERTURA bloque_puede CIERRE
+
+    APERTURA        shift and go to state 22
+
+
+state 19
+
+    (27) modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA . bloque_tiene CIERRE
+    (12) bloque_tiene -> . asignacion
+    (13) bloque_tiene -> . bloque_tiene asignacion
+    (14) asignacion -> . assign_type IDENTIFICADOR IGUAL NUMERO
+    (15) assign_type -> . IDENTIFICADOR
+    (16) assign_type -> . EJE
+    (17) assign_type -> . MOTORX
+    (18) assign_type -> . MOTORY
+
+    IDENTIFICADOR   shift and go to state 23
+    EJE             shift and go to state 27
+    MOTORX          shift and go to state 28
+    MOTORY          shift and go to state 29
+
+    bloque_tiene                   shift and go to state 24
+    asignacion                     shift and go to state 25
+    assign_type                    shift and go to state 26
+
+state 20
+
+    (28) modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA . bloque_puede CIERRE
+    (19) bloque_puede -> . funcion
+    (20) bloque_puede -> . bloque_puede funcion
+    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+
+    IDENTIFICADOR   shift and go to state 30
+
+    bloque_puede                   shift and go to state 31
+    funcion                        shift and go to state 32
+
+state 21
+
+    (7) constructor_base -> NODO IDENTIFICADOR OBJETO . APERTURA bloque_caracteristicas CIERRE
+
+    APERTURA        shift and go to state 33
+
+
+state 22
+
+    (21) rutina -> RUTINA IDENTIFICADOR APERTURA . bloque_puede CIERRE
+    (19) bloque_puede -> . funcion
+    (20) bloque_puede -> . bloque_puede funcion
+    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+
+    IDENTIFICADOR   shift and go to state 30
+
+    bloque_puede                   shift and go to state 34
+    funcion                        shift and go to state 32
+
+state 23
+
+    (15) assign_type -> IDENTIFICADOR .
+
+    IDENTIFICADOR   reduce using rule 15 (assign_type -> IDENTIFICADOR .)
+
+
+state 24
+
+    (27) modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene . CIERRE
+    (13) bloque_tiene -> bloque_tiene . asignacion
+    (14) asignacion -> . assign_type IDENTIFICADOR IGUAL NUMERO
+    (15) assign_type -> . IDENTIFICADOR
+    (16) assign_type -> . EJE
+    (17) assign_type -> . MOTORX
+    (18) assign_type -> . MOTORY
+
+    CIERRE          shift and go to state 35
+    IDENTIFICADOR   shift and go to state 23
+    EJE             shift and go to state 27
+    MOTORX          shift and go to state 28
+    MOTORY          shift and go to state 29
+
+    asignacion                     shift and go to state 36
+    assign_type                    shift and go to state 26
+
+state 25
+
+    (12) bloque_tiene -> asignacion .
+
+    CIERRE          reduce using rule 12 (bloque_tiene -> asignacion .)
+    IDENTIFICADOR   reduce using rule 12 (bloque_tiene -> asignacion .)
+    EJE             reduce using rule 12 (bloque_tiene -> asignacion .)
+    MOTORX          reduce using rule 12 (bloque_tiene -> asignacion .)
+    MOTORY          reduce using rule 12 (bloque_tiene -> asignacion .)
+
+
+state 26
+
+    (14) asignacion -> assign_type . IDENTIFICADOR IGUAL NUMERO
+
+    IDENTIFICADOR   shift and go to state 37
+
+
+state 27
+
+    (16) assign_type -> EJE .
+
+    IDENTIFICADOR   reduce using rule 16 (assign_type -> EJE .)
+
+
+state 28
+
+    (17) assign_type -> MOTORX .
+
+    IDENTIFICADOR   reduce using rule 17 (assign_type -> MOTORX .)
+
+
+state 29
+
+    (18) assign_type -> MOTORY .
+
+    IDENTIFICADOR   reduce using rule 18 (assign_type -> MOTORY .)
+
+
+state 30
+
+    (22) funcion -> IDENTIFICADOR . LPAREN argumentos RPAREN
+
+    LPAREN          shift and go to state 38
+
+
+state 31
+
+    (28) modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede . CIERRE
+    (20) bloque_puede -> bloque_puede . funcion
+    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+
+    CIERRE          shift and go to state 39
+    IDENTIFICADOR   shift and go to state 30
+
+    funcion                        shift and go to state 40
+
+state 32
+
+    (19) bloque_puede -> funcion .
+
+    CIERRE          reduce using rule 19 (bloque_puede -> funcion .)
+    IDENTIFICADOR   reduce using rule 19 (bloque_puede -> funcion .)
+
+
+state 33
+
+    (7) constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA . bloque_caracteristicas CIERRE
+    (8) bloque_caracteristicas -> . caracteristica
+    (9) bloque_caracteristicas -> . bloque_caracteristicas caracteristica
+    (10) caracteristica -> . TIENE APERTURA bloque_tiene CIERRE
+    (11) caracteristica -> . PUEDE APERTURA bloque_puede CIERRE
+
+    TIENE           shift and go to state 43
+    PUEDE           shift and go to state 44
+
+    bloque_caracteristicas         shift and go to state 41
+    caracteristica                 shift and go to state 42
+
+state 34
+
+    (21) rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede . CIERRE
+    (20) bloque_puede -> bloque_puede . funcion
+    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+
+    CIERRE          shift and go to state 45
+    IDENTIFICADOR   shift and go to state 30
+
+    funcion                        shift and go to state 40
+
+state 35
+
+    (27) modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .
+
+    CIERRE          reduce using rule 27 (modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .)
+    NODO            reduce using rule 27 (modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .)
+    IDENTIFICADOR   reduce using rule 27 (modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .)
+    RUTINA          reduce using rule 27 (modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .)
+
+
+state 36
+
+    (13) bloque_tiene -> bloque_tiene asignacion .
+
+    CIERRE          reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
+    IDENTIFICADOR   reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
+    EJE             reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
+    MOTORX          reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
+    MOTORY          reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
+
+
+state 37
+
+    (14) asignacion -> assign_type IDENTIFICADOR . IGUAL NUMERO
+
+    IGUAL           shift and go to state 46
+
+
+state 38
+
+    (22) funcion -> IDENTIFICADOR LPAREN . argumentos RPAREN
+    (23) argumentos -> . argumento
+    (24) argumentos -> . argumentos COMA argumento
+    (25) argumento -> . IDENTIFICADOR
+    (26) argumento -> . NUMERO
+
+    IDENTIFICADOR   shift and go to state 47
+    NUMERO          shift and go to state 50
+
+    argumentos                     shift and go to state 48
+    argumento                      shift and go to state 49
+
+state 39
+
+    (28) modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .
+
+    CIERRE          reduce using rule 28 (modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .)
+    NODO            reduce using rule 28 (modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .)
+    IDENTIFICADOR   reduce using rule 28 (modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .)
+    RUTINA          reduce using rule 28 (modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .)
+
+
+state 40
+
+    (20) bloque_puede -> bloque_puede funcion .
+
+    CIERRE          reduce using rule 20 (bloque_puede -> bloque_puede funcion .)
+    IDENTIFICADOR   reduce using rule 20 (bloque_puede -> bloque_puede funcion .)
+
+
+state 41
+
+    (7) constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas . CIERRE
+    (9) bloque_caracteristicas -> bloque_caracteristicas . caracteristica
+    (10) caracteristica -> . TIENE APERTURA bloque_tiene CIERRE
+    (11) caracteristica -> . PUEDE APERTURA bloque_puede CIERRE
+
+    CIERRE          shift and go to state 51
+    TIENE           shift and go to state 43
+    PUEDE           shift and go to state 44
+
+    caracteristica                 shift and go to state 52
+
+state 42
+
+    (8) bloque_caracteristicas -> caracteristica .
+
+    CIERRE          reduce using rule 8 (bloque_caracteristicas -> caracteristica .)
+    TIENE           reduce using rule 8 (bloque_caracteristicas -> caracteristica .)
+    PUEDE           reduce using rule 8 (bloque_caracteristicas -> caracteristica .)
+
+
+state 43
+
+    (10) caracteristica -> TIENE . APERTURA bloque_tiene CIERRE
+
+    APERTURA        shift and go to state 53
+
+
+state 44
+
+    (11) caracteristica -> PUEDE . APERTURA bloque_puede CIERRE
+
+    APERTURA        shift and go to state 54
+
+
+state 45
+
+    (21) rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .
+
+    CIERRE          reduce using rule 21 (rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .)
+    NODO            reduce using rule 21 (rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .)
+    IDENTIFICADOR   reduce using rule 21 (rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .)
+    RUTINA          reduce using rule 21 (rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .)
+
+
+state 46
+
+    (14) asignacion -> assign_type IDENTIFICADOR IGUAL . NUMERO
+
+    NUMERO          shift and go to state 55
+
+
+state 47
+
+    (25) argumento -> IDENTIFICADOR .
+
+    RPAREN          reduce using rule 25 (argumento -> IDENTIFICADOR .)
+    COMA            reduce using rule 25 (argumento -> IDENTIFICADOR .)
+
+
+state 48
+
+    (22) funcion -> IDENTIFICADOR LPAREN argumentos . RPAREN
+    (24) argumentos -> argumentos . COMA argumento
+
+    RPAREN          shift and go to state 56
+    COMA            shift and go to state 57
+
+
+state 49
+
+    (23) argumentos -> argumento .
+
+    RPAREN          reduce using rule 23 (argumentos -> argumento .)
+    COMA            reduce using rule 23 (argumentos -> argumento .)
+
+
+state 50
+
+    (26) argumento -> NUMERO .
+
+    RPAREN          reduce using rule 26 (argumento -> NUMERO .)
+    COMA            reduce using rule 26 (argumento -> NUMERO .)
+
+
+state 51
+
+    (7) constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .
+
+    CIERRE          reduce using rule 7 (constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .)
+    NODO            reduce using rule 7 (constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .)
+    IDENTIFICADOR   reduce using rule 7 (constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .)
+    RUTINA          reduce using rule 7 (constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .)
+
+
+state 52
+
+    (9) bloque_caracteristicas -> bloque_caracteristicas caracteristica .
+
+    CIERRE          reduce using rule 9 (bloque_caracteristicas -> bloque_caracteristicas caracteristica .)
+    TIENE           reduce using rule 9 (bloque_caracteristicas -> bloque_caracteristicas caracteristica .)
+    PUEDE           reduce using rule 9 (bloque_caracteristicas -> bloque_caracteristicas caracteristica .)
+
+
+state 53
+
+    (10) caracteristica -> TIENE APERTURA . bloque_tiene CIERRE
+    (12) bloque_tiene -> . asignacion
+    (13) bloque_tiene -> . bloque_tiene asignacion
+    (14) asignacion -> . assign_type IDENTIFICADOR IGUAL NUMERO
+    (15) assign_type -> . IDENTIFICADOR
+    (16) assign_type -> . EJE
+    (17) assign_type -> . MOTORX
+    (18) assign_type -> . MOTORY
+
+    IDENTIFICADOR   shift and go to state 23
+    EJE             shift and go to state 27
+    MOTORX          shift and go to state 28
+    MOTORY          shift and go to state 29
+
+    bloque_tiene                   shift and go to state 58
+    asignacion                     shift and go to state 25
+    assign_type                    shift and go to state 26
+
+state 54
+
+    (11) caracteristica -> PUEDE APERTURA . bloque_puede CIERRE
+    (19) bloque_puede -> . funcion
+    (20) bloque_puede -> . bloque_puede funcion
+    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+
+    IDENTIFICADOR   shift and go to state 30
+
+    bloque_puede                   shift and go to state 59
+    funcion                        shift and go to state 32
+
+state 55
+
+    (14) asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .
+
+    CIERRE          reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
+    IDENTIFICADOR   reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
+    EJE             reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
+    MOTORX          reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
+    MOTORY          reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
+
+
+state 56
+
+    (22) funcion -> IDENTIFICADOR LPAREN argumentos RPAREN .
+
+    CIERRE          reduce using rule 22 (funcion -> IDENTIFICADOR LPAREN argumentos RPAREN .)
+    IDENTIFICADOR   reduce using rule 22 (funcion -> IDENTIFICADOR LPAREN argumentos RPAREN .)
+
+
+state 57
+
+    (24) argumentos -> argumentos COMA . argumento
+    (25) argumento -> . IDENTIFICADOR
+    (26) argumento -> . NUMERO
+
+    IDENTIFICADOR   shift and go to state 47
+    NUMERO          shift and go to state 50
+
+    argumento                      shift and go to state 60
+
+state 58
+
+    (10) caracteristica -> TIENE APERTURA bloque_tiene . CIERRE
+    (13) bloque_tiene -> bloque_tiene . asignacion
+    (14) asignacion -> . assign_type IDENTIFICADOR IGUAL NUMERO
+    (15) assign_type -> . IDENTIFICADOR
+    (16) assign_type -> . EJE
+    (17) assign_type -> . MOTORX
+    (18) assign_type -> . MOTORY
+
+    CIERRE          shift and go to state 61
+    IDENTIFICADOR   shift and go to state 23
+    EJE             shift and go to state 27
+    MOTORX          shift and go to state 28
+    MOTORY          shift and go to state 29
+
+    asignacion                     shift and go to state 36
+    assign_type                    shift and go to state 26
+
+state 59
+
+    (11) caracteristica -> PUEDE APERTURA bloque_puede . CIERRE
+    (20) bloque_puede -> bloque_puede . funcion
+    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+
+    CIERRE          shift and go to state 62
+    IDENTIFICADOR   shift and go to state 30
+
+    funcion                        shift and go to state 40
+
+state 60
+
+    (24) argumentos -> argumentos COMA argumento .
+
+    RPAREN          reduce using rule 24 (argumentos -> argumentos COMA argumento .)
+    COMA            reduce using rule 24 (argumentos -> argumentos COMA argumento .)
+
+
+state 61
+
+    (10) caracteristica -> TIENE APERTURA bloque_tiene CIERRE .
+
+    CIERRE          reduce using rule 10 (caracteristica -> TIENE APERTURA bloque_tiene CIERRE .)
+    TIENE           reduce using rule 10 (caracteristica -> TIENE APERTURA bloque_tiene CIERRE .)
+    PUEDE           reduce using rule 10 (caracteristica -> TIENE APERTURA bloque_tiene CIERRE .)
+
+
+state 62
+
+    (11) caracteristica -> PUEDE APERTURA bloque_puede CIERRE .
+
+    CIERRE          reduce using rule 11 (caracteristica -> PUEDE APERTURA bloque_puede CIERRE .)
+    TIENE           reduce using rule 11 (caracteristica -> PUEDE APERTURA bloque_puede CIERRE .)
+    PUEDE           reduce using rule 11 (caracteristica -> PUEDE APERTURA bloque_puede CIERRE .)
+

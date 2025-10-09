@@ -1,0 +1,14 @@
+programa Motor2D:
+	//CREAR OBJETO
+	nodo cerradura motor:
+		tiene:
+			eje x = 0
+			hora h = 3600 //segundos
+		.
+		puede:
+			alternar(x)
+			contar(h)
+		.
+	.
+.
+
