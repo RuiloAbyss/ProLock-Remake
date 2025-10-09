@@ -6,11 +6,8 @@ import sintactico as AS
 class CompilerGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Analizador Léxico y Sintáctico")
+        self.root.title("Compilador de ProLock")
         self.root.geometry("800x600")
-        
-        # Almacena los tokens de la última compilación
-        self.tokens_identificados = []
 
         # Fuente base
         self.text_font = font.Font(family="Consolas", size=12)
@@ -38,6 +35,10 @@ class CompilerGUI:
         self.scrollbar = tk.Scrollbar(frame)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        # Zoom
+        self.root.bind("<Control-plus>", self.zoom_in)
+        self.root.bind("<Control-minus>", self.zoom_out)
+
         # Numeración
         self.line_numbers = tk.Text(frame, width=4, padx=5, takefocus=0, font=self.text_font,
                                     bg="#f0f0f0", state=tk.DISABLED)
@@ -54,45 +55,45 @@ class CompilerGUI:
         self.text_area.bind("<KeyRelease>", self.update_line_numbers)
         self.text_area.bind("<MouseWheel>", self.sync_mouse_wheel)
         self.line_numbers.bind("<MouseWheel>", self.sync_mouse_wheel)
-        self.text_area.bind("<Configure>", self.update_line_numbers)
-
 
         # --- Consola ---
         tk.Label(self.root, text="Consola de Resultados", font=("Helvetica", 12, "bold")).pack(pady=(10, 0))
-        self.console_area = scrolledtext.ScrolledText(self.root, height=10, wrap=tk.WORD, state=tk.DISABLED)
-        self.console_area.pack(pady=10, fill=tk.X, padx=10)
-
-        # Zoom
-        self.root.bind("<Control-plus>", self.zoom_in)
-        self.root.bind("<Control-minus>", self.zoom_out)
+        self.console_area = scrolledtext.ScrolledText(self.root, height=8, wrap=tk.WORD, state=tk.DISABLED)
+        self.console_area.pack(pady=10, fill=tk.X)
 
         # Inicializar numeración
         self.update_line_numbers()
 
     # ---------------- Funciones GUI ----------------
     def sync_scroll(self, *args):
+        """Sincroniza scrollbar entre área de texto y numeración"""
         self.line_numbers.yview_moveto(args[0])
         self.scrollbar.set(*args)
-        self.update_line_numbers()
 
     def scroll_both(self, *args):
+        """Permite que el scroll controle ambas áreas"""
         self.text_area.yview(*args)
         self.line_numbers.yview(*args)
-        self.update_line_numbers()
 
     def sync_mouse_wheel(self, event):
+        """Desplazamiento sincronizado con la rueda del ratón"""
         self.text_area.yview_scroll(int(-1 * (event.delta / 120)), "units")
         self.line_numbers.yview_scroll(int(-1 * (event.delta / 120)), "units")
-        self.update_line_numbers()
         return "break"
 
     def update_line_numbers(self, event=None):
+        """Actualiza los números de línea sin alterar la posición del scroll."""
+        # Guardar la posición actual del scroll
         scroll_pos = self.text_area.yview()
+
+        # Actualizar la numeración
         self.line_numbers.config(state=tk.NORMAL)
         self.line_numbers.delete("1.0", tk.END)
         total_lines = int(self.text_area.index('end-1c').split('.')[0])
         self.line_numbers.insert(tk.END, "\n".join(str(i) for i in range(1, total_lines + 1)))
         self.line_numbers.config(state=tk.DISABLED)
+
+        # Restaurar posición de scroll
         self.line_numbers.yview_moveto(scroll_pos[0])
 
     def zoom_in(self, event=None):
@@ -122,85 +123,120 @@ class CompilerGUI:
             with open(archivo, "w") as file:
                 file.write(self.text_area.get("1.0", tk.END))
     
+
     def compilar(self):
+        """
+        Orquesta el análisis léxico y sintáctico en fases separadas.
+        La fase sintáctica solo se ejecuta si la léxica es exitosa.
+        """
+        # 0. PREPARACIÓN
         self.console_area.config(state=tk.NORMAL)
         self.console_area.delete("1.0", tk.END)
-        
         codigo = self.text_area.get("1.0", tk.END)
 
-        # 1. Análisis Léxico
-        # La función 'analisis' ahora limpia sus propias listas y devuelve los resultados
-        AL.analisis(codigo)
-        self.tokens_identificados = AL.tokens_identificados
-        errores_lexicos = AL.lista_errores_lexicos
-
-        has_errors = False
-        if errores_lexicos:
-            has_errors = True
-            for error in errores_lexicos:
-                self.console_area.insert(tk.END, f"[Error Léxico] {error}\n")
-        
-        # Si hay errores léxicos, no tiene sentido continuar con el sintáctico
-        if has_errors:
-            self.console_area.insert(tk.END, "[Compilación fallida] Se encontraron errores léxicos.\n")
+        # Validar si hay código para analizar
+        if not codigo.strip():
+            self.console_area.insert(tk.END, "[ERROR] El área de código está vacía.\n")
             self.console_area.config(state=tk.DISABLED)
             return
 
-        # 2. Análisis Sintáctico
-        # Limpiar lista de errores sintácticos antes de cada análisis
-        AS.limpiar_errores_sintacticos()
+        # ==========================================================
+        # FASE 1: ANÁLISIS LÉXICO
+        # ==========================================================
+        self.console_area.insert(tk.END, "--- Iniciando Fase 1: Análisis Léxico ---\n")
         
-        # Parsear el código
-        try:
-            resultadosSintactico = AS.parser.parse(codigo, lexer=AL.lexer)
-            errores_sintacticos = AS.errores_Sinc_Desc
+        AL.analisis(codigo) # El módulo léxico se encarga de llenar sus listas de tokens y errores
+        
+        errores_lexicos = AL.lista_errores_lexicos
+        self.tokens_identificados = AL.tokens_identificados
+
+        # CONDICIÓN DE FALLO: Si hay errores léxicos O no se encontró ningún token
+        if errores_lexicos or not self.tokens_identificados:
+            self.console_area.insert(tk.END, f"Análisis léxico fallido. Se encontraron problemas:\n")
             
-            if errores_sintacticos:
-                 has_errors = True
-                 for error in errores_sintacticos:
-                    self.console_area.insert(tk.END, f"[Error Sintáctico] {error}\n")
-
-        except Exception as e:
-            has_errors = True
-            self.console_area.insert(tk.END, f"[Error Crítico del Parser] {str(e)}\n")
-
-        # 3. Mostrar resultado final
-        if not has_errors:
-             self.console_area.insert(tk.END, "¡Compilación exitosa! No se encontraron errores léxicos ni sintácticos.\n")
+            # Caso especial: no hay tokens, pero tampoco errores (código vacío o con solo comentarios)
+            if not self.tokens_identificados and not errores_lexicos:
+                self.console_area.insert(tk.END, " - Error: El código no contiene ningún token válido para analizar.\n")
+            
+            # Mostrar todos los errores léxicos encontrados
+            for token in self.tokens_identificados:
+                # Desempaquetamos la tupla del token para acceder a sus datos
+                token_value, token_type, token_line, token_col = token
+                
+                # Si encontramos un token que fue marcado como ERROR...
+                if token_type == 'ERROR':
+                    # ...construimos el mensaje de error detallado y lo insertamos en la consola.
+                    error_msg = f" - Símbolo no reconocido '{token_value}' en línea {token_line}, columna {token_col}\n"
+                    self.console_area.insert(tk.END, error_msg)
         else:
-            self.console_area.insert(tk.END, "[Compilación finalizada con errores]\n")
+            self.console_area.insert(tk.END, f" Análisis léxico completado. {len(self.tokens_identificados)} tokens encontrados.\n\n")
 
-        self.console_area.config(state=tk.DISABLED)
+        # ==========================================================
+        # FASE 2: ANÁLISIS SINTÁCTICO (Solo si la Fase 1 tuvo éxito)
+        # ==========================================================
+        self.console_area.insert(tk.END, "--- Iniciando Fase 2: Análisis Sintáctico ---\n")
         
+        AS.limpiar_errores_sintacticos() # Limpiar errores de una ejecución previa
+        
+        # El parser de YACC reutiliza el lexer y su estado
+        global resultadosSintactico
+        resultadosSintactico = AS.parser.parse(codigo, lexer=AL.lexer)
+        
+        errores_sintacticos = AS.errores_Sinc_Desc
+
+        # CONDICIÓN DE FALLO: Si hay errores sintácticos
+        if errores_sintacticos:
+            self.console_area.insert(tk.END, f"Análisis sintáctico fallido. Se encontraron problemas de estructura:\n")
+            for error in errores_sintacticos:
+                self.console_area.insert(tk.END, f" - {error}\n")
+        else:
+            self.console_area.insert(tk.END, "Análisis sintáctico completado. La estructura del programa es correcta.\n\n")
+            self.console_area.insert(tk.END, "¡Análisis completado con éxito!\n")
+        
+        self.console_area.config(state=tk.DISABLED)
+
+    # ... (La función ver_tokens y las otras permanecen igual) ...
     def ver_tokens(self):
-        if not self.tokens_identificados:
-            tk.messagebox.showinfo("Tokens", "Aún no se ha compilado ningún código.")
+        if not hasattr(self, 'tokens_identificados') or not self.tokens_identificados:
+            # Mensaje por si se intenta abrir la tabla sin haber analizado
+            from tkinter import messagebox
+            messagebox.showinfo("Información", "Debes ejecutar el análisis primero para generar la tabla de tokens.")
             return
 
         tokens_window = tk.Toplevel(self.root)
-        tokens_window.title("Tokens Identificados")
-        tokens_window.geometry("400x450")
-        
-        table_frame = tk.Frame(tokens_window)
-        table_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        scrollbar = tk.Scrollbar(table_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tokens_window.title("Tabla de Tokens Generados")
+        tokens_window.geometry("500x450")
 
+        # Columnas mejoradas
         columns = ('Valor', 'Tipo', 'Línea', 'Columna')
-        tree = ttk.Treeview(table_frame, columns=columns, show='headings', yscrollcommand=scrollbar.set)
-        tree.pack(fill=tk.BOTH, expand=True)
-        
-        for col in columns:
-            tree.heading(col, text=col)
-            tree.column(col, width=90, anchor='center')
+        tree = ttk.Treeview(tokens_window, columns=columns, show='headings')
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Llenar la tabla con los tokens (usando la lista de la instancia)
+        # Definir encabezados y tamaño de columnas
+        tree.heading('Valor', text='Valor')
+        tree.column('Valor', width=150)
+        tree.heading('Tipo', text='Tipo de Token')
+        tree.column('Tipo', width=150)
+        tree.heading('Línea', text='Línea')
+        tree.column('Línea', width=50, anchor='center')
+        tree.heading('Columna', text='Columna')
+        tree.column('Columna', width=60, anchor='center')
+
+        # Configurar una etiqueta (tag) para colorear las filas de error
+        tree.tag_configure('error_token', background='#FFDDDD', foreground='red')
+
+        # Llenar la tabla con los tokens
         for token in self.tokens_identificados:
-            tree.insert('', tk.END, values=token)
+            token_value, token_type, token_line, token_col = token
             
-        scrollbar.config(command=tree.yview)
+            # Si el token es de tipo ERROR, usa la etiqueta de estilo
+            if token_type == 'ERROR':
+                tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col), tags=('error_token',))
+            else:
+                tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col))
+        # ... (resto del código de ver_tokens sin cambios) ...
 
+# --- Código para correr la aplicación (sin cambios) ---
 if __name__ == "__main__":
     root = tk.Tk()
     app = CompilerGUI(root)

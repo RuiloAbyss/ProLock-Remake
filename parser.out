@@ -9,6 +9,7 @@ Unused terminals:
     CONTADOR
     DEC
     ENT
+    ERROR
     FALSE
     NO
     RELOJ
@@ -63,6 +64,7 @@ CONTADOR             :
 DEC                  : 
 EJE                  : 16
 ENT                  : 
+ERROR                : 
 FALSE                : 
 IDENTIFICADOR        : 1 7 14 15 21 22 25 27 28
 IGUAL                : 14

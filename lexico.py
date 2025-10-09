@@ -1,40 +1,27 @@
 import ply.lex as lex
+import re 
 
-# Variables globales para almacenar resultados de la última ejecución
+# Variables globales para almacenar resultados
 tokens_identificados = []
 lista_errores_lexicos = []
 
-# Palabras reservadas (mapeo de palabra a tipo de token)
+# Palabras reservadas (sin cambios)
 RESERVADA = {
-    'nodo': 'NODO',
-    'tiene': 'TIENE',
-    'puede': 'PUEDE',
-    'ciclo': 'CICLO',
-    'si': 'SI',
-    'no': 'NO',
-    'ent': 'ENT',
-    'dec': 'DEC',
-    'bin': 'BIN',
-    'false': 'FALSE',
-    'true': 'TRUE',
-    'eje': 'EJE',
-    'motorx': 'MOTORX',
-    'motory': 'MOTORY',
-    'reloj': 'RELOJ',
-    'tempo': 'TEMPO',
-    'contador': 'CONTADOR',
-    'rutina': 'RUTINA',
-    'programa': 'PROG' # Añadido para consistencia
+    'nodo': 'NODO', 'tiene': 'TIENE', 'puede': 'PUEDE', 'ciclo': 'CICLO',
+    'si': 'SI', 'no': 'NO', 'ent': 'ENT', 'dec': 'DEC', 'bin': 'BIN',
+    'false': 'FALSE', 'true': 'TRUE', 'eje': 'EJE', 'motorx': 'MOTORX',
+    'motory': 'MOTORY', 'reloj': 'RELOJ', 'tempo': 'TEMPO',
+    'contador': 'CONTADOR', 'rutina': 'RUTINA', 'programa': 'PROG'
 }
 
-# Lista completa de tokens (se añaden los valores del diccionario RESERVADA)
+# --- CAMBIO: Añadir 'ERROR' a la lista de tokens ---
 tokens = [
     'IDENTIFICADOR', 'APERTURA', 'CIERRE', 'NUMERO', 'LPAREN', 'RPAREN',
     'CADENA', 'COMENTARIO', 'OBJETO', 'opLOGICO', 'opARITMETICO', 
-    'IGUAL', 'COMA', 'PROG'
+    'IGUAL', 'COMA', 'PROG', 'ERROR'  # <-- Token de error añadido
 ] + list(RESERVADA.values())
 
-# Reglas para tokens simples
+# Reglas de tokens simples (sin cambios)
 t_APERTURA = r'\:'
 t_CIERRE = r'\.'
 t_LPAREN = r'\('
@@ -43,70 +30,107 @@ t_COMA = r','
 t_IGUAL = r'='
 t_opLOGICO = r'(==|>=|<=|>|<)'
 t_opARITMETICO = r'(\+|-|\*|/|%)'
-
-# Ignorar espacios y tabs, pero no saltos de línea
 t_ignore = ' \t\r'
 
-# Reglas con acciones (funciones)
-
+# Reglas con acciones (sin cambios)
 def t_OBJETO(t):
     r'\b(reloj|tempo|motor|memo)\b'
     return t
 
 def t_NUMERO(t):
-    r'-?\d+(\.\d+)?'
+    r'-?\d+(\.\d+)?(?![a-zA-Z_])'
     t.value = float(t.value) if '.' in t.value else int(t.value)
     return t
 
 def t_IDENTIFICADOR(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
-    # Revisa si el identificador es una palabra reservada
     t.type = RESERVADA.get(t.value.lower(), 'IDENTIFICADOR')
     return t
 
 def t_CADENA(t):
     r'"([^"\\]|\\.)*"'
-    t.value = t.value[1:-1]  # Quitar comillas
+    t.value = t.value[1:-1]
     return t
 
 def t_COMENTARIO(t):
     r'//.*'
-    pass  # Ignorar comentarios, no hacer nada
+    pass
 
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
 
-# Manejo de errores léxicos
+# ==========================================================
+# ERROR
+# ==========================================================
 def t_error(t):
-    # Calcular la columna del error
+    """
+    Esta función ahora captura la palabra inválida completa.
+    1.  Calcula la posición inicial del error.
+    2.  Escanea hacia adelante para encontrar el final de la palabra.
+    3.  Crea un mensaje de error y un token de ERROR con la palabra completa.
+    4.  Avanza el lexer después de la palabra inválida.
+    5.  Retorna el token de error.
+    """
+    # 1. Calcular la columna inicial del error
     inicio_linea = t.lexer.lexdata.rfind('\n', 0, t.lexpos) + 1
-    columna = (t.lexpos - inicio_linea) + 1
-    error_msg = f"Símbolo no válido '{t.value[0]}' en la línea {t.lineno}, columna {columna}"
+    columna = 0
+    posicion_actual = inicio_linea
+    tabsize = 4
+    while posicion_actual < t.lexpos:
+        if t.lexer.lexdata[posicion_actual] == '\t':
+            columna += tabsize - (columna % tabsize)
+        else:
+            columna += 1
+        posicion_actual += 1
+    columna += 1
+
+    # 2. Encuentra el final de la palabra inválida buscando el próximo espacio en blanco, tabulador o salto de línea
+    match = re.search(r'\s', t.value)
+    if match:
+        # Si se encuentra un espacio, la palabra termina ahí
+        end_pos = match.start()
+    else:
+        # Si no, la palabra va hasta el final de la cadena
+        end_pos = len(t.value)
+    
+    # La palabra inválida es la subcadena desde el inicio hasta el límite
+    invalid_word = t.value[:end_pos]
+
+    # 3. Registrar el mensaje y configurar el token de ERROR con la palabra completa
+    error_msg = f"Símbolo o palabra no reconocida '{invalid_word}' en la línea {t.lineno}, columna {columna}"
     lista_errores_lexicos.append(error_msg)
-    t.lexer.skip(1)
+    
+    # El valor del token ahora es la palabra completa
+    t.type = 'ERROR'
+    t.value = invalid_word
+
+    # 4. Avanza el lexer para saltar TODA la palabra inválida
+    t.lexer.lexpos += len(invalid_word)
+    
+    # 5. Retornar el token para que se añada a la lista
+    return t
 
 # Construir el analizador léxico
 lexer = lex.lex()
 
 def analisis(cadena):
     """
-    Realiza el análisis léxico del código fuente.
-    Limpia las listas de tokens y errores antes de cada ejecución.
+    Realiza el análisis léxico. Ahora, la lista 'tokens_identificados'
+    incluirá tanto los tokens válidos como los de tipo 'ERROR'.
     """
-    # Limpiar resultados de análisis anteriores
     tokens_identificados.clear()
     lista_errores_lexicos.clear()
     
     lexer.input(cadena)
-    lexer.lineno = 1  # Iniciar contador de líneas en 1
+    lexer.lineno = 1
 
     while True:
         tok = lexer.token()
         if not tok:
-            break  # Fin de la entrada
+            break
         
-        # Calcular columna
+        # Calcular columna para TODOS los tokens (incluidos los de error)
         inicio_linea = cadena.rfind('\n', 0, tok.lexpos) + 1
         columna = (tok.lexpos - inicio_linea) + 1
         
