@@ -14,21 +14,78 @@ except ImportError:
 
 class CompilerGUI:
     def __init__(self, root):
+#=========================================
+# ESTETICA UI
+#=========================================
+        # --- Paleta de colores ---
+        self.colors = {
+            "background": "#F9F9F9",         # Fondo general en un gris muy claro (casi blanco)
+            "editor_bg": "#FFFFFF",          # Fondo del editor en blanco puro
+            "text": "#212121",               # Texto principal en un gris muy oscuro
+            "cursor": "#000000",             # Cursor negro
+            "selection": "#ADD8E6",         # Selección en azul claro estándar
+            "line_numbers": "#9090A0",       # Números de línea en un gris medio
+            "console_label": "#424242",      # Etiqueta de la consola en un gris más oscuro
+            "success": "#2E7D32",             # Verde oscuro y sobrio
+            "error": "#C62828",               # Rojo oscuro y sobrio
+            "info": "#1565C0",                # Azul oscuro y sobrio
+            "scrollbar_thumb": "#E5E5E5",         # Slider del scrollbar
+            "scrollbar_thumb_active": "#E9E9E9" # Slider del scrollbar activo
+        }
+
+        # --- Definir el estilo para los TTK Widgets ---
+        style = ttk.Style()
+        style.theme_use('clam') # Usar un tema base que permita más personalización
+
+        # Configurar el estilo para los scrollbars vertical y horizontal
+        style.configure("Modern.Vertical.TScrollbar", 
+                        troughcolor=self.colors["background"], 
+                        background=self.colors["scrollbar_thumb"],
+                        gripcount=0,
+                        relief='flat')
+        style.configure("Modern.Horizontal.TScrollbar", 
+                        troughcolor=self.colors["background"], 
+                        background=self.colors["scrollbar_thumb"],
+                        gripcount=0,
+                        relief='flat')
+        
+        # Cambiar el color del thumb cuando el mouse pasa por encima
+        style.map("Modern.Vertical.TScrollbar",
+                  background=[('active', self.colors["scrollbar_thumb_active"])])
+        style.map("Modern.Horizontal.TScrollbar",
+                  background=[('active', self.colors["scrollbar_thumb_active"])])
+        style.map('Treeview.Heading',
+                  background=[('active', self.colors["scrollbar_thumb_active"])])
+        
+        # --- ESTILO PARA LA TABLA DE TOKENS ---
+        style.configure("Treeview",
+                        background=self.colors["editor_bg"],
+                        foreground=self.colors["text"],
+                        fieldbackground=self.colors["editor_bg"],
+                        rowheight=25, # Aumentar altura de fila para mejor espaciado
+                        relief='flat')
+
+        style.configure("Treeview.Heading",
+                        background=self.colors["background"],
+                        foreground=self.colors["console_label"],
+                        font=('Helvetica', 10, 'bold'),
+                        relief='flat')
+#-------------------------------------------------------------------------------------------
         self.root = root
         self.root.title("Compilador de ProLock")
         self.root.geometry("800x600")
+        self.root.config(bg=self.colors["background"])
         
         self.current_filepath = None #guardar los nombres de los archivos para copiar su nombre en otras exportaciones
 
         # Fuente base
         self.text_font = font.Font(family="Consolas", size=12)
         
-
         # --- Menú ---
         menu = tk.Menu(self.root)
         self.root.config(menu=menu)
-        file_menu = tk.Menu(menu, tearoff=0)
-        tools_menu = tk.Menu(menu, tearoff=0)
+        file_menu = tk.Menu(menu, tearoff=0, bg=self.colors["background"], fg=self.colors["text"])
+        tools_menu = tk.Menu(menu, tearoff=0, bg=self.colors["background"], fg=self.colors["text"])
         menu.add_cascade(label="Archivo", menu=file_menu)
         menu.add_cascade(label="Herramientas", menu=tools_menu)
 
@@ -41,40 +98,45 @@ class CompilerGUI:
         tools_menu.add_command(label="Ver Árbol Sintáctico", command=self.ver_arbol)
 
         # --- PanedWindow como contenedor principal ---
-        main_pane = tk.PanedWindow(self.root, orient=tk.VERTICAL, sashrelief=tk.RAISED, sashwidth=4)
+        main_pane = tk.PanedWindow(self.root, orient=tk.VERTICAL, sashrelief=tk.RAISED, sashwidth=4, bg=self.colors["background"])
         main_pane.pack(fill=tk.BOTH, expand=True)
 
         # --- Frame principal ---
         frame = tk.Frame(main_pane)
         console_frame = tk.Frame(main_pane)
 
-        # --- Añadir los frames al PanedWindow ---
-        # Se añade el frame del editor con un tamaño mínimo para que no desaparezca.
+        # --- Frames para los paneles ---
+        frame = tk.Frame(main_pane, bg=self.colors["background"])
+        console_frame = tk.Frame(main_pane, bg=self.colors["background"])
         main_pane.add(frame, minsize=200)
-        # Se añade el frame de la consola con un tamaño mínimo más grande.
         main_pane.add(console_frame, minsize=150)
 
         # Scrollbar Horizontal
-        self.h_scrollbar = tk.Scrollbar(frame, orient=tk.HORIZONTAL)
+        self.h_scrollbar = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, style="Modern.Horizontal.TScrollbar")
         self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
 
         # Scrollbar vertical
-        self.scrollbar = tk.Scrollbar(frame)
+        self.scrollbar = ttk.Scrollbar(frame, style="Modern.Vertical.TScrollbar")
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Numeración
-        self.line_numbers = tk.Text(frame, width=4, padx=5, takefocus=0, font=self.text_font, bg="#f0f0f0", state=tk.DISABLED)
+        self.line_numbers = tk.Text(frame, width=4, padx=5, takefocus=0, font=self.text_font, 
+                                    bg=self.colors["background"], fg=self.colors["line_numbers"], 
+                                    state=tk.DISABLED, bd=0) # bd=0 para quitar el borde
         self.line_numbers.pack(side=tk.LEFT, fill=tk.Y)
 
         # Área de texto
         self.text_area = tk.Text(frame, wrap=tk.NONE, font=self.text_font, undo=True,
                                  yscrollcommand=self.sync_scroll,
-                                xscrollcommand=self.h_scrollbar.set)
+                                 xscrollcommand=self.h_scrollbar.set,
+                                 bg=self.colors["editor_bg"], fg=self.colors["text"],
+                                 selectbackground=self.colors["selection"],
+                                 insertbackground=self.colors["cursor"], bd=0) # bd=0 para quitar el borde
         self.text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.text_area.config(tabs=(self.text_font.measure(' ' * 3),)) #Tabs de 3 caracters
+        self.text_area.config(tabs=(self.text_font.measure(' ' * 3),))
         self.scrollbar.config(command=self.scroll_both)
         self.h_scrollbar.config(command=self.text_area.xview)
-        
+
         # Eventos
         self.text_area.bind("<KeyRelease>", self.update_line_numbers)
         self.text_area.bind("<MouseWheel>", self.sync_mouse_wheel)
@@ -84,13 +146,18 @@ class CompilerGUI:
         self.root.bind("<Control-minus>", self.zoom_out)
 
         # --- Consola ---
-        tk.Label(console_frame, text="Consola de Resultados", font=("Helvetica", 12, "bold")).pack(pady=(5, 0))
-        self.console_area = scrolledtext.ScrolledText(console_frame, height=12, wrap=tk.WORD, state=tk.DISABLED, font=("Consolas", 10))
-        self.console_area.pack(pady=5, padx=5, fill=tk.BOTH, expand=True)
+        tk.Label(console_frame, text="Consola de Resultados", font=("Helvetica", 12, "bold"),
+                 bg=self.colors["background"], fg=self.colors["console_label"]).pack(pady=(5, 0))
         
+        self.console_area = scrolledtext.ScrolledText(console_frame, height=12, wrap=tk.WORD, state=tk.DISABLED, 
+                                                      font=("Consolas", 10), bg=self.colors["editor_bg"], 
+                                                      fg=self.colors["text"], bd=0)
+        self.console_area.pack(pady=5, padx=5, fill=tk.BOTH, expand=True)
+
         # --- Definición de estilos (tags) para la consola ---
-        self.console_area.tag_config('error', foreground='red')
-        self.console_area.tag_config('success', foreground='green')
+        self.console_area.tag_config('error', foreground=self.colors["error"])
+        self.console_area.tag_config('success', foreground=self.colors["success"])
+        self.console_area.tag_config('info', foreground=self.colors["info"])
 
         # Inicializar numeración
         self.update_line_numbers()

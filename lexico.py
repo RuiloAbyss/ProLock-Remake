@@ -55,7 +55,7 @@ def t_IDENTIFICADOR(t):
     return t
 
 def t_NUMERO(t):
-    r'-?\d+(\.\d+)?'
+    r'-?\d+(\.\d+)?\b'
     t.value = float(t.value) if '.' in t.value else int(t.value)
     return t
 
