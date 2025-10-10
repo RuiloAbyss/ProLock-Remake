@@ -300,19 +300,32 @@ class CompilerGUI:
     # ... (La función ver_tokens y las otras permanecen igual) ...
     def ver_tokens(self):
         if not hasattr(self, 'tokens_identificados') or not self.tokens_identificados:
-            # Mensaje por si se intenta abrir la tabla sin haber analizado
-            from tkinter import messagebox
             messagebox.showinfo("Información", "Debes ejecutar el análisis primero para generar la tabla de tokens.")
             return
 
         tokens_window = tk.Toplevel(self.root)
         tokens_window.title("Tabla de Tokens Generados")
         tokens_window.geometry("500x450")
+        tokens_window.config(bg=self.colors["background"])
 
-        # Columnas mejoradas
+        # Frame principal para padding y contenido
+        frame = tk.Frame(tokens_window, bg=self.colors["background"])
+        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Scrollbar vertical (hijo de frame)
+        scrollbar = ttk.Scrollbar(frame, style="Modern.Vertical.TScrollbar")
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Treeview (CORRECCIÓN 1: El padre ahora es 'frame')
         columns = ('Valor', 'Tipo', 'Línea', 'Columna')
-        tree = ttk.Treeview(tokens_window, columns=columns, show='headings')
-        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        tree = ttk.Treeview(frame, columns=columns, show='headings', 
+                            yscrollcommand=scrollbar.set) # <-- El padre es 'frame'
+        
+        # CORRECCIÓN 2: Se empaqueta a la izquierda del frame
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True) 
+
+        # Configurar el Scrollbar para que controle el Treeview
+        scrollbar.config(command=tree.yview)
 
         # Definir encabezados y tamaño de columnas
         tree.heading('Valor', text='Valor')
@@ -324,18 +337,22 @@ class CompilerGUI:
         tree.heading('Columna', text='Columna')
         tree.column('Columna', width=60, anchor='center')
 
-        # Configurar una etiqueta (tag) para colorear las filas de error
-        tree.tag_configure('error_token', background='#FFDDDD', foreground='red')
+        # Configurar etiquetas (tags) con la paleta de colores
+        tree.tag_configure('error_token', background='#FFEBEE', foreground=self.colors["error"])
+        tree.tag_configure('evenrow', background=self.colors["editor_bg"])
+        tree.tag_configure('oddrow', background=self.colors["background"])
 
-        # Llenar la tabla con los tokens
-        for token in self.tokens_identificados:
+        # Llenar la tabla con los tokens y aplicar los estilos de fila
+        for i, token in enumerate(self.tokens_identificados):
             token_value, token_type, token_line, token_col = token
+            row_tag = 'evenrow' if i % 2 == 0 else 'oddrow'
             
-            # Si el token es de tipo ERROR, usa la etiqueta de estilo
             if token_type == 'ERROR':
-                tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col), tags=('error_token',))
+                final_tags = (row_tag, 'error_token')
             else:
-                tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col))
+                final_tags = (row_tag,)
+                
+            tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col), tags=final_tags)
 
     def ver_arbol(self):
         """
