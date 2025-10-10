@@ -40,17 +40,27 @@ class CompilerGUI:
         tools_menu.add_command(label="Ver Tokens", command=self.ver_tokens)
         tools_menu.add_command(label="Ver Árbol Sintáctico", command=self.ver_arbol)
 
-        # --- Frame principal ---
-        frame = tk.Frame(self.root)
-        frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # --- PanedWindow como contenedor principal ---
+        main_pane = tk.PanedWindow(self.root, orient=tk.VERTICAL, sashrelief=tk.RAISED, sashwidth=4)
+        main_pane.pack(fill=tk.BOTH, expand=True)
 
-        # Scrollbar
+        # --- Frame principal ---
+        frame = tk.Frame(main_pane)
+        console_frame = tk.Frame(main_pane)
+
+        # --- Añadir los frames al PanedWindow ---
+        # Se añade el frame del editor con un tamaño mínimo para que no desaparezca.
+        main_pane.add(frame, minsize=200)
+        # Se añade el frame de la consola con un tamaño mínimo más grande.
+        main_pane.add(console_frame, minsize=150)
+
+        # Scrollbar Horizontal
+        self.h_scrollbar = tk.Scrollbar(frame, orient=tk.HORIZONTAL)
+        self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Scrollbar vertical
         self.scrollbar = tk.Scrollbar(frame)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # Zoom
-        self.root.bind("<Control-plus>", self.zoom_in)
-        self.root.bind("<Control-minus>", self.zoom_out)
 
         # Numeración
         self.line_numbers = tk.Text(frame, width=4, padx=5, takefocus=0, font=self.text_font, bg="#f0f0f0", state=tk.DISABLED)
@@ -58,21 +68,26 @@ class CompilerGUI:
 
         # Área de texto
         self.text_area = tk.Text(frame, wrap=tk.NONE, font=self.text_font, undo=True,
-                                 yscrollcommand=self.sync_scroll)
+                                 yscrollcommand=self.sync_scroll,
+                                xscrollcommand=self.h_scrollbar.set)
         self.text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.text_area.config(tabs=(self.text_font.measure(' ' * 3),)) #Tabs de 3 caracters
         self.scrollbar.config(command=self.scroll_both)
-
+        self.h_scrollbar.config(command=self.text_area.xview)
+        
         # Eventos
         self.text_area.bind("<KeyRelease>", self.update_line_numbers)
         self.text_area.bind("<MouseWheel>", self.sync_mouse_wheel)
         self.line_numbers.bind("<MouseWheel>", self.sync_mouse_wheel)
+        # Zoom
+        self.root.bind("<Control-plus>", self.zoom_in)
+        self.root.bind("<Control-minus>", self.zoom_out)
 
         # --- Consola ---
-        tk.Label(self.root, text="Consola de Resultados", font=("Helvetica", 12, "bold")).pack(pady=(10, 0))
-        self.console_area = scrolledtext.ScrolledText(self.root, height=8, wrap=tk.WORD, state=tk.DISABLED, font=("Consolas", 10))
-        self.console_area.pack(pady=10, fill=tk.X)
-
+        tk.Label(console_frame, text="Consola de Resultados", font=("Helvetica", 12, "bold")).pack(pady=(5, 0))
+        self.console_area = scrolledtext.ScrolledText(console_frame, height=12, wrap=tk.WORD, state=tk.DISABLED, font=("Consolas", 10))
+        self.console_area.pack(pady=5, padx=5, fill=tk.BOTH, expand=True)
+        
         # --- Definición de estilos (tags) para la consola ---
         self.console_area.tag_config('error', foreground='red')
         self.console_area.tag_config('success', foreground='green')
