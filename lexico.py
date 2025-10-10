@@ -1,54 +1,66 @@
 import ply.lex as lex
-import re 
+import re
 
 # Variables globales para almacenar resultados
 tokens_identificados = []
 lista_errores_lexicos = []
 
-# Palabras reservadas (sin cambios)
+# Palabras reservadas
 RESERVADA = {
-    'nodo': 'NODO', 'tiene': 'TIENE', 'puede': 'PUEDE', 'ciclo': 'CICLO',
-    'si': 'SI', 'no': 'NO', 'ent': 'ENT', 'dec': 'DEC', 'bin': 'BIN',
-    'false': 'FALSE', 'true': 'TRUE', 'eje': 'EJE', 'motorx': 'MOTORX',
-    'motory': 'MOTORY', 'reloj': 'RELOJ', 'tempo': 'TEMPO',
-    'contador': 'CONTADOR', 'rutina': 'RUTINA', 'programa': 'PROG'
+    'program': 'PROGRAM', 'lock': 'LOCK', 'clock': 'CLOCK', 'routine': 'ROUTINE',
+    'state': 'STATE', 'action': 'ACTION', 'when': 'WHEN', 'boolean': 'BOOLEAN',
+    'string': 'STRING', 'time': 'TIME', 'moment': 'MOMENT', 'true': 'TRUE',
+    'false': 'FALSE', 'show': 'SHOW', 'current_time': 'CURRENT_TIME', 'check': 'CHECK'
 }
 
-# --- CAMBIO: Añadir 'ERROR' a la lista de tokens ---
+# Lista de tokens
 tokens = [
-    'IDENTIFICADOR', 'APERTURA', 'CIERRE', 'NUMERO', 'LPAREN', 'RPAREN',
-    'CADENA', 'COMENTARIO', 'OBJETO', 'opLOGICO', 'opARITMETICO', 
-    'IGUAL', 'COMA', 'ERROR' 
+    'IDENTIFICADOR', 'NUMERO', 'CADENA', 'COMENTARIO',
+    'APERTURA_LLAVE', 'CIERRE_LLAVE',                   # { }
+    'LPAREN', 'RPAREN',                                 # ( )
+    'PUNTO', 'COMA', 'IGUAL', 'DOS_PUNTOS',             # . , = :
+    'FLECHA', 'opLOGICO',                               # -> ==
+    'TIEMPO',                                           # <HH:MM>
+    'NATIVA'                                            # $VARIABLE
 ] + list(RESERVADA.values())
 
-# Reglas de tokens simples (sin cambios)
-t_APERTURA = r'\:'
-t_CIERRE = r'\.'
+# --- Token TIEMPO con validación de formato 24h ---
+def t_TIEMPO(t):
+    r'\<([01]\d|2[0-3]):[0-5]\d\>'
+    return t
+
+# --- Token NATIVO para variables que no requieren definir su tipo de dato Y pertenecen a objetos por defecto
+def t_NATIVA(t):
+    r'\$[a-zA-Z_][a-zA-Z_0-9]*'
+    t.value = t.value[1:] # Guardamos el nombre sin el '$'
+    return t
+
+# Reglas de tokens simples
+t_APERTURA_LLAVE = r'\{'
+t_CIERRE_LLAVE = r'\}'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
+t_PUNTO = r'\.'
 t_COMA = r','
 t_IGUAL = r'='
-t_opLOGICO = r'(==|>=|<=|>|<)'
-t_opARITMETICO = r'(\+|-|\*|/|%)'
+t_DOS_PUNTOS = r'\:'
+t_FLECHA = r'->'
+t_opLOGICO = r'=='
 t_ignore = ' \t\r'
 
-# Reglas con acciones (sin cambios)
-def t_OBJETO(t):
-    r'\b(reloj|tempo|motor|memo)\b'
-    return t
-
-def t_NUMERO(t):
-    r'-?\d+(\.\d+)?(?![a-zA-Z_])'
-    t.value = float(t.value) if '.' in t.value else int(t.value)
-    return t
-
+# Reglas con acciones
 def t_IDENTIFICADOR(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
     t.type = RESERVADA.get(t.value.lower(), 'IDENTIFICADOR')
     return t
 
+def t_NUMERO(t):
+    r'-?\d+(\.\d+)?'
+    t.value = float(t.value) if '.' in t.value else int(t.value)
+    return t
+
 def t_CADENA(t):
-    r'"([^"\\]|\\.)*"'
+    r'\"([^\"\\]|\\.)*\"'
     t.value = t.value[1:-1]
     return t
 

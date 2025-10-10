@@ -202,7 +202,7 @@ class CompilerGUI:
         global resultadosSintactico
         resultadosSintactico = AS.parser.parse(codigo, lexer=AL.lexer)
         
-        errores_sintacticos = AS.errores_Sinc_Desc
+        errores_sintacticos = AS.errores_sintacticos
 
         # CONDICIÓN DE FALLO: Si hay errores sintácticos
         if errores_sintacticos:
@@ -273,7 +273,7 @@ class CompilerGUI:
         AS.limpiar_errores_sintacticos() 
         syntax_tree = AS.parser.parse(codigo, lexer=AL.lexer)
         
-        if not syntax_tree or AS.errores_Sinc_Desc:
+        if not syntax_tree or AS.errores_sintacticos:
             messagebox.showerror("Error de Sintaxis", 
                                 "No se puede generar el árbol porque el código tiene errores.\n"
                                 "Usa 'Analizar Código' para ver los detalles.")

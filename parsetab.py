@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = 'APERTURA BIN CADENA CICLO CIERRE COMA COMENTARIO CONTADOR DEC EJE ENT ERROR FALSE IDENTIFICADOR IGUAL LPAREN MOTORX MOTORY NO NODO NUMERO OBJETO PROG PUEDE RELOJ RPAREN RUTINA SI TEMPO TIENE TRUE opARITMETICO opLOGICO\nprograma : PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE\n\nbloque_codigo : declaracion\n              | bloque_codigo declaracion\n\ndeclaracion : constructor_base\n            | modificador_caracteristica\n            | rutina\n\nconstructor_base : NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE\n\nbloque_caracteristicas : caracteristica\n                       | bloque_caracteristicas caracteristica\n\ncaracteristica : TIENE APERTURA bloque_tiene CIERRE\n               | PUEDE APERTURA bloque_puede CIERRE\n\nbloque_tiene : asignacion\n             | bloque_tiene asignacion\n\nasignacion : assign_type IDENTIFICADOR IGUAL NUMERO\n\nassign_type : IDENTIFICADOR\n            | EJE\n            | MOTORX\n            | MOTORY\n\nbloque_puede : funcion\n             | bloque_puede funcion\n\nrutina : RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE\n\nfuncion : IDENTIFICADOR LPAREN argumentos RPAREN\n\nargumentos : argumento\n           | argumentos COMA argumento\n\nargumento : IDENTIFICADOR\n          | NUMERO\n\nmodificador_caracteristica : IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE\n                           | IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE\n'
+_lr_signature = 'ACTION APERTURA_LLAVE BOOLEAN CADENA CHECK CIERRE_LLAVE CLOCK COMA COMENTARIO CURRENT_TIME DOS_PUNTOS FALSE FLECHA IDENTIFICADOR IGUAL LOCK LPAREN MOMENT NATIVA NUMERO PROGRAM PUNTO ROUTINE RPAREN SHOW STATE STRING TIEMPO TIME TRUE WHEN opLOGICOprograma : PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVEbloque_definiciones : bloque_definiciones definicion\n| definiciondefinicion : def_lock\n| def_clock\n| def_routinedef_lock : LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVEdef_clock : CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVEbloque_estado : STATE DOS_PUNTOS lista_variableslista_variables : lista_variables declaracion\n| declaraciondeclaracion : declaracion_variable\n| declaracion_nativadeclaracion_variable : tipo IDENTIFICADOR IGUAL valordeclaracion_nativa : NATIVA IGUAL valortipo : BOOLEAN\n| STRING\n| TIME\n| MOMENTvalor : TRUE\n| FALSE\n| CADENA\n| valor_momento\n| CURRENT_TIME LPAREN RPARENvalor_momento : TIEMPOdef_routine : ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVEbloque_acciones : bloque_acciones def_action\n| def_actiondef_action : ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVEclausula_when : WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuenciacondicion : expresion opLOGICO expresionexpresion : IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN\n| LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPARENnombre_variable : IDENTIFICADOR\n| NATIVAconsecuencia : llamada\n| consecuencia COMA llamadallamada : SHOW LPAREN argumento_show RPAREN\n| IDENTIFICADOR PUNTO IDENTIFICADORargumento_show : CADENA\n| expresion'
     
-_lr_action_items = {'PROG':([0,],[2,]),'$end':([1,15,],[0,-1,]),'IDENTIFICADOR':([2,4,6,7,8,9,10,11,12,16,19,20,22,23,24,25,26,27,28,29,31,32,34,35,36,38,39,40,45,51,53,54,55,56,57,58,59,],[3,5,5,-2,-4,-5,-6,17,18,-3,23,30,30,-15,23,-12,37,-16,-17,-18,30,-19,30,-27,-13,47,-28,-20,-21,-7,23,30,-14,-22,47,23,30,]),'APERTURA':([3,13,14,18,21,43,44,],[4,19,20,22,33,53,54,]),'NODO':([4,6,7,8,9,10,16,35,39,45,51,],[11,11,-2,-4,-5,-6,-3,-27,-28,-21,-7,]),'RUTINA':([4,6,7,8,9,10,16,35,39,45,51,],[12,12,-2,-4,-5,-6,-3,-27,-28,-21,-7,]),'TIENE':([5,33,41,42,52,61,62,],[13,43,43,-8,-9,-10,-11,]),'PUEDE':([5,33,41,42,52,61,62,],[14,44,44,-8,-9,-10,-11,]),'CIERRE':([6,7,8,9,10,16,24,25,31,32,34,35,36,39,40,41,42,45,51,52,55,56,58,59,61,62,],[15,-2,-4,-5,-6,-3,35,-12,39,-19,45,-27,-13,-28,-20,51,-8,-21,-7,-9,-14,-22,61,62,-10,-11,]),'OBJETO':([17,],[21,]),'EJE':([19,24,25,36,53,55,58,],[27,27,-12,-13,27,-14,27,]),'MOTORX':([19,24,25,36,53,55,58,],[28,28,-12,-13,28,-14,28,]),'MOTORY':([19,24,25,36,53,55,58,],[29,29,-12,-13,29,-14,29,]),'LPAREN':([30,],[38,]),'IGUAL':([37,],[46,]),'NUMERO':([38,46,57,],[50,55,50,]),'RPAREN':([47,48,49,50,60,],[-25,56,-23,-26,-24,]),'COMA':([47,48,49,50,60,],[-25,57,-23,-26,-24,]),}
+_lr_action_items = {'PROGRAM':([0,],[2,]),'$end':([1,13,],[0,-1,]),'IDENTIFICADOR':([2,10,11,12,25,44,46,47,48,49,55,64,72,73,76,88,89,90,],[3,15,16,17,30,53,-16,-17,-18,-19,67,70,67,78,85,85,67,97,]),'APERTURA_LLAVE':([3,17,21,22,30,],[4,20,26,27,34,]),'LOCK':([4,5,6,7,8,9,14,28,35,37,],[10,10,-3,-4,-5,-6,-2,-26,-7,-8,]),'CLOCK':([4,5,6,7,8,9,14,28,35,37,],[11,11,-3,-4,-5,-6,-2,-26,-7,-8,]),'ROUTINE':([4,5,6,7,8,9,14,28,35,37,],[12,12,-3,-4,-5,-6,-2,-26,-7,-8,]),'CIERRE_LLAVE':([5,6,7,8,9,14,23,24,28,29,31,33,35,37,38,40,41,42,43,50,52,57,58,59,60,61,63,68,74,82,83,93,97,100,],[13,-3,-4,-5,-6,-2,28,-28,-26,-27,35,37,-7,-8,50,-9,-11,-12,-13,-29,-10,-15,-20,-21,-22,-23,-25,-14,-24,-30,-36,-37,-39,-38,]),'LPAREN':([15,16,51,55,62,72,84,87,89,91,],[18,19,55,64,69,64,89,92,64,98,]),'RPAREN':([18,19,65,69,70,77,92,94,95,96,98,99,101,],[21,22,71,74,75,-31,99,100,-40,-41,101,-33,-32,]),'ACTION':([20,23,24,29,50,],[25,25,-28,-27,-29,]),'STATE':([26,27,],[32,32,]),'DOS_PUNTOS':([32,39,],[36,51,]),'WHEN':([34,],[39,]),'NATIVA':([36,40,41,42,43,52,57,58,59,60,61,63,68,73,74,],[45,45,-11,-12,-13,-10,-15,-20,-21,-22,-23,-25,-14,80,-24,]),'BOOLEAN':([36,40,41,42,43,52,57,58,59,60,61,63,68,74,],[46,46,-11,-12,-13,-10,-15,-20,-21,-22,-23,-25,-14,-24,]),'STRING':([36,40,41,42,43,52,57,58,59,60,61,63,68,74,],[47,47,-11,-12,-13,-10,-15,-20,-21,-22,-23,-25,-14,-24,]),'TIME':([36,40,41,42,43,52,57,58,59,60,61,63,68,74,],[48,48,-11,-12,-13,-10,-15,-20,-21,-22,-23,-25,-14,-24,]),'MOMENT':([36,40,41,42,43,52,57,58,59,60,61,63,68,74,],[49,49,-11,-12,-13,-10,-15,-20,-21,-22,-23,-25,-14,-24,]),'IGUAL':([45,53,],[54,56,]),'TRUE':([54,56,],[58,58,]),'FALSE':([54,56,],[59,59,]),'CADENA':([54,56,89,],[60,60,95,]),'CURRENT_TIME':([54,56,],[62,62,]),'TIEMPO':([54,56,],[63,63,]),'opLOGICO':([66,99,101,],[72,-33,-32,]),'PUNTO':([67,75,78,79,80,85,],[73,81,-34,86,-35,90,]),'FLECHA':([71,],[76,]),'SHOW':([76,88,],[84,84,]),'CHECK':([81,86,],[87,91,]),'COMA':([82,83,93,97,100,],[88,-36,-37,-39,-38,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'programa':([0,],[1,]),'bloque_codigo':([4,],[6,]),'declaracion':([4,6,],[7,16,]),'constructor_base':([4,6,],[8,8,]),'modificador_caracteristica':([4,6,],[9,9,]),'rutina':([4,6,],[10,10,]),'bloque_tiene':([19,53,],[24,58,]),'asignacion':([19,24,53,58,],[25,36,25,36,]),'assign_type':([19,24,53,58,],[26,26,26,26,]),'bloque_puede':([20,22,54,],[31,34,59,]),'funcion':([20,22,31,34,54,59,],[32,32,40,40,32,40,]),'bloque_caracteristicas':([33,],[41,]),'caracteristica':([33,41,],[42,52,]),'argumentos':([38,],[48,]),'argumento':([38,57,],[49,60,]),}
+_lr_goto_items = {'programa':([0,],[1,]),'bloque_definiciones':([4,],[5,]),'definicion':([4,5,],[6,14,]),'def_lock':([4,5,],[7,7,]),'def_clock':([4,5,],[8,8,]),'def_routine':([4,5,],[9,9,]),'bloque_acciones':([20,],[23,]),'def_action':([20,23,],[24,29,]),'bloque_estado':([26,27,],[31,33,]),'clausula_when':([34,],[38,]),'lista_variables':([36,],[40,]),'declaracion':([36,40,],[41,52,]),'declaracion_variable':([36,40,],[42,42,]),'declaracion_nativa':([36,40,],[43,43,]),'tipo':([36,40,],[44,44,]),'valor':([54,56,],[57,68,]),'valor_momento':([54,56,],[61,61,]),'condicion':([55,],[65,]),'expresion':([55,72,89,],[66,77,96,]),'nombre_variable':([73,],[79,]),'consecuencia':([76,],[82,]),'llamada':([76,88,],[83,93,]),'argumento_show':([89,],[94,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -27,32 +27,45 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> programa","S'",1,None,None,None),
-  ('programa -> PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE','programa',5,'p_programa','sintactico.py',16),
-  ('bloque_codigo -> declaracion','bloque_codigo',1,'p_bloque_codigo','sintactico.py',22),
-  ('bloque_codigo -> bloque_codigo declaracion','bloque_codigo',2,'p_bloque_codigo','sintactico.py',23),
-  ('declaracion -> constructor_base','declaracion',1,'p_declaracion','sintactico.py',32),
-  ('declaracion -> modificador_caracteristica','declaracion',1,'p_declaracion','sintactico.py',33),
-  ('declaracion -> rutina','declaracion',1,'p_declaracion','sintactico.py',34),
-  ('constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE','constructor_base',6,'p_constructor_base','sintactico.py',40),
-  ('bloque_caracteristicas -> caracteristica','bloque_caracteristicas',1,'p_bloque_caracteristicas','sintactico.py',46),
-  ('bloque_caracteristicas -> bloque_caracteristicas caracteristica','bloque_caracteristicas',2,'p_bloque_caracteristicas','sintactico.py',47),
-  ('caracteristica -> TIENE APERTURA bloque_tiene CIERRE','caracteristica',4,'p_caracteristica','sintactico.py',56),
-  ('caracteristica -> PUEDE APERTURA bloque_puede CIERRE','caracteristica',4,'p_caracteristica','sintactico.py',57),
-  ('bloque_tiene -> asignacion','bloque_tiene',1,'p_bloque_tiene','sintactico.py',63),
-  ('bloque_tiene -> bloque_tiene asignacion','bloque_tiene',2,'p_bloque_tiene','sintactico.py',64),
-  ('asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO','asignacion',4,'p_asignacion','sintactico.py',73),
-  ('assign_type -> IDENTIFICADOR','assign_type',1,'p_assign_type','sintactico.py',79),
-  ('assign_type -> EJE','assign_type',1,'p_assign_type','sintactico.py',80),
-  ('assign_type -> MOTORX','assign_type',1,'p_assign_type','sintactico.py',81),
-  ('assign_type -> MOTORY','assign_type',1,'p_assign_type','sintactico.py',82),
-  ('bloque_puede -> funcion','bloque_puede',1,'p_bloque_puede','sintactico.py',88),
-  ('bloque_puede -> bloque_puede funcion','bloque_puede',2,'p_bloque_puede','sintactico.py',89),
-  ('rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE','rutina',5,'p_rutina','sintactico.py',98),
-  ('funcion -> IDENTIFICADOR LPAREN argumentos RPAREN','funcion',4,'p_funcion','sintactico.py',104),
-  ('argumentos -> argumento','argumentos',1,'p_argumentos','sintactico.py',110),
-  ('argumentos -> argumentos COMA argumento','argumentos',3,'p_argumentos','sintactico.py',111),
-  ('argumento -> IDENTIFICADOR','argumento',1,'p_argumento','sintactico.py',121),
-  ('argumento -> NUMERO','argumento',1,'p_argumento','sintactico.py',122),
-  ('modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE','modificador_caracteristica',5,'p_modificador_caracteristica','sintactico.py',128),
-  ('modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE','modificador_caracteristica',5,'p_modificador_caracteristica','sintactico.py',129),
+  ('programa -> PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE','programa',5,'p_programa','sintactico.py',15),
+  ('bloque_definiciones -> bloque_definiciones definicion','bloque_definiciones',2,'p_bloque_definiciones','sintactico.py',21),
+  ('bloque_definiciones -> definicion','bloque_definiciones',1,'p_bloque_definiciones','sintactico.py',22),
+  ('definicion -> def_lock','definicion',1,'p_definicion','sintactico.py',29),
+  ('definicion -> def_clock','definicion',1,'p_definicion','sintactico.py',30),
+  ('definicion -> def_routine','definicion',1,'p_definicion','sintactico.py',31),
+  ('def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE','def_lock',7,'p_def_lock','sintactico.py',36),
+  ('def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE','def_clock',7,'p_def_clock','sintactico.py',40),
+  ('bloque_estado -> STATE DOS_PUNTOS lista_variables','bloque_estado',3,'p_bloque_estado','sintactico.py',45),
+  ('lista_variables -> lista_variables declaracion','lista_variables',2,'p_lista_variables','sintactico.py',49),
+  ('lista_variables -> declaracion','lista_variables',1,'p_lista_variables','sintactico.py',50),
+  ('declaracion -> declaracion_variable','declaracion',1,'p_declaracion','sintactico.py',57),
+  ('declaracion -> declaracion_nativa','declaracion',1,'p_declaracion','sintactico.py',58),
+  ('declaracion_variable -> tipo IDENTIFICADOR IGUAL valor','declaracion_variable',4,'p_declaracion_variable','sintactico.py',63),
+  ('declaracion_nativa -> NATIVA IGUAL valor','declaracion_nativa',3,'p_declaracion_nativa','sintactico.py',68),
+  ('tipo -> BOOLEAN','tipo',1,'p_tipo','sintactico.py',72),
+  ('tipo -> STRING','tipo',1,'p_tipo','sintactico.py',73),
+  ('tipo -> TIME','tipo',1,'p_tipo','sintactico.py',74),
+  ('tipo -> MOMENT','tipo',1,'p_tipo','sintactico.py',75),
+  ('valor -> TRUE','valor',1,'p_valor','sintactico.py',79),
+  ('valor -> FALSE','valor',1,'p_valor','sintactico.py',80),
+  ('valor -> CADENA','valor',1,'p_valor','sintactico.py',81),
+  ('valor -> valor_momento','valor',1,'p_valor','sintactico.py',82),
+  ('valor -> CURRENT_TIME LPAREN RPAREN','valor',3,'p_valor','sintactico.py',83),
+  ('valor_momento -> TIEMPO','valor_momento',1,'p_valor_momento','sintactico.py',87),
+  ('def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE','def_routine',5,'p_def_routine','sintactico.py',92),
+  ('bloque_acciones -> bloque_acciones def_action','bloque_acciones',2,'p_bloque_acciones','sintactico.py',96),
+  ('bloque_acciones -> def_action','bloque_acciones',1,'p_bloque_acciones','sintactico.py',97),
+  ('def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE','def_action',5,'p_def_action','sintactico.py',104),
+  ('clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia','clausula_when',7,'p_clausula_when','sintactico.py',109),
+  ('condicion -> expresion opLOGICO expresion','condicion',3,'p_condicion','sintactico.py',113),
+  ('expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN','expresion',7,'p_expresion','sintactico.py',117),
+  ('expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN','expresion',7,'p_expresion','sintactico.py',118),
+  ('nombre_variable -> IDENTIFICADOR','nombre_variable',1,'p_nombre_variable','sintactico.py',125),
+  ('nombre_variable -> NATIVA','nombre_variable',1,'p_nombre_variable','sintactico.py',126),
+  ('consecuencia -> llamada','consecuencia',1,'p_consecuencia','sintactico.py',130),
+  ('consecuencia -> consecuencia COMA llamada','consecuencia',3,'p_consecuencia','sintactico.py',131),
+  ('llamada -> SHOW LPAREN argumento_show RPAREN','llamada',4,'p_llamada','sintactico.py',138),
+  ('llamada -> IDENTIFICADOR PUNTO IDENTIFICADOR','llamada',3,'p_llamada','sintactico.py',139),
+  ('argumento_show -> CADENA','argumento_show',1,'p_argumento_show','sintactico.py',146),
+  ('argumento_show -> expresion','argumento_show',1,'p_argumento_show','sintactico.py',147),
 ]

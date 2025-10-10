@@ -2,118 +2,124 @@ Created by PLY version 3.11 (http://www.dabeaz.com/ply)
 
 Unused terminals:
 
-    BIN
-    CADENA
-    CICLO
     COMENTARIO
-    CONTADOR
-    DEC
-    ENT
-    ERROR
-    FALSE
-    NO
-    RELOJ
-    SI
-    TEMPO
-    TRUE
-    opARITMETICO
-    opLOGICO
+    NUMERO
 
 Grammar
 
 Rule 0     S' -> programa
-Rule 1     programa -> PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE
-Rule 2     bloque_codigo -> declaracion
-Rule 3     bloque_codigo -> bloque_codigo declaracion
-Rule 4     declaracion -> constructor_base
-Rule 5     declaracion -> modificador_caracteristica
-Rule 6     declaracion -> rutina
-Rule 7     constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE
-Rule 8     bloque_caracteristicas -> caracteristica
-Rule 9     bloque_caracteristicas -> bloque_caracteristicas caracteristica
-Rule 10    caracteristica -> TIENE APERTURA bloque_tiene CIERRE
-Rule 11    caracteristica -> PUEDE APERTURA bloque_puede CIERRE
-Rule 12    bloque_tiene -> asignacion
-Rule 13    bloque_tiene -> bloque_tiene asignacion
-Rule 14    asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO
-Rule 15    assign_type -> IDENTIFICADOR
-Rule 16    assign_type -> EJE
-Rule 17    assign_type -> MOTORX
-Rule 18    assign_type -> MOTORY
-Rule 19    bloque_puede -> funcion
-Rule 20    bloque_puede -> bloque_puede funcion
-Rule 21    rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE
-Rule 22    funcion -> IDENTIFICADOR LPAREN argumentos RPAREN
-Rule 23    argumentos -> argumento
-Rule 24    argumentos -> argumentos COMA argumento
-Rule 25    argumento -> IDENTIFICADOR
-Rule 26    argumento -> NUMERO
-Rule 27    modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE
-Rule 28    modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE
+Rule 1     programa -> PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE
+Rule 2     bloque_definiciones -> bloque_definiciones definicion
+Rule 3     bloque_definiciones -> definicion
+Rule 4     definicion -> def_lock
+Rule 5     definicion -> def_clock
+Rule 6     definicion -> def_routine
+Rule 7     def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+Rule 8     def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+Rule 9     bloque_estado -> STATE DOS_PUNTOS lista_variables
+Rule 10    lista_variables -> lista_variables declaracion
+Rule 11    lista_variables -> declaracion
+Rule 12    declaracion -> declaracion_variable
+Rule 13    declaracion -> declaracion_nativa
+Rule 14    declaracion_variable -> tipo IDENTIFICADOR IGUAL valor
+Rule 15    declaracion_nativa -> NATIVA IGUAL valor
+Rule 16    tipo -> BOOLEAN
+Rule 17    tipo -> STRING
+Rule 18    tipo -> TIME
+Rule 19    tipo -> MOMENT
+Rule 20    valor -> TRUE
+Rule 21    valor -> FALSE
+Rule 22    valor -> CADENA
+Rule 23    valor -> valor_momento
+Rule 24    valor -> CURRENT_TIME LPAREN RPAREN
+Rule 25    valor_momento -> TIEMPO
+Rule 26    def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
+Rule 27    bloque_acciones -> bloque_acciones def_action
+Rule 28    bloque_acciones -> def_action
+Rule 29    def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
+Rule 30    clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia
+Rule 31    condicion -> expresion opLOGICO expresion
+Rule 32    expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
+Rule 33    expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
+Rule 34    nombre_variable -> IDENTIFICADOR
+Rule 35    nombre_variable -> NATIVA
+Rule 36    consecuencia -> llamada
+Rule 37    consecuencia -> consecuencia COMA llamada
+Rule 38    llamada -> SHOW LPAREN argumento_show RPAREN
+Rule 39    llamada -> IDENTIFICADOR PUNTO IDENTIFICADOR
+Rule 40    argumento_show -> CADENA
+Rule 41    argumento_show -> expresion
 
 Terminals, with rules where they appear
 
-APERTURA             : 1 7 10 11 21 27 28
-BIN                  : 
-CADENA               : 
-CICLO                : 
-CIERRE               : 1 7 10 11 21 27 28
-COMA                 : 24
+ACTION               : 29
+APERTURA_LLAVE       : 1 7 8 26 29
+BOOLEAN              : 16
+CADENA               : 22 40
+CHECK                : 32 33
+CIERRE_LLAVE         : 1 7 8 26 29
+CLOCK                : 8
+COMA                 : 37
 COMENTARIO           : 
-CONTADOR             : 
-DEC                  : 
-EJE                  : 16
-ENT                  : 
-ERROR                : 
-FALSE                : 
-IDENTIFICADOR        : 1 7 14 15 21 22 25 27 28
-IGUAL                : 14
-LPAREN               : 22
-MOTORX               : 17
-MOTORY               : 18
-NO                   : 
-NODO                 : 7
-NUMERO               : 14 26
-OBJETO               : 7
-PROG                 : 1
-PUEDE                : 11 28
-RELOJ                : 
-RPAREN               : 22
-RUTINA               : 21
-SI                   : 
-TEMPO                : 
-TIENE                : 10 27
-TRUE                 : 
+CURRENT_TIME         : 24
+DOS_PUNTOS           : 9 30
+FALSE                : 21
+FLECHA               : 30
+IDENTIFICADOR        : 1 7 8 14 26 29 32 33 34 39 39
+IGUAL                : 14 15
+LOCK                 : 7
+LPAREN               : 7 8 24 30 32 33 33 38
+MOMENT               : 19
+NATIVA               : 15 35
+NUMERO               : 
+PROGRAM              : 1
+PUNTO                : 32 32 33 39
+ROUTINE              : 26
+RPAREN               : 7 8 24 30 32 33 33 38
+SHOW                 : 38
+STATE                : 9
+STRING               : 17
+TIEMPO               : 25
+TIME                 : 18
+TRUE                 : 20
+WHEN                 : 30
 error                : 
-opARITMETICO         : 
-opLOGICO             : 
+opLOGICO             : 31
 
 Nonterminals, with rules where they appear
 
-argumento            : 23 24
-argumentos           : 22 24
-asignacion           : 12 13
-assign_type          : 14
-bloque_caracteristicas : 7 9
-bloque_codigo        : 1 3
-bloque_puede         : 11 20 21 28
-bloque_tiene         : 10 13 27
-caracteristica       : 8 9
-constructor_base     : 4
-declaracion          : 2 3
-funcion              : 19 20
-modificador_caracteristica : 5
+argumento_show       : 38
+bloque_acciones      : 26 27
+bloque_definiciones  : 1 2
+bloque_estado        : 7 8
+clausula_when        : 29
+condicion            : 30
+consecuencia         : 30 37
+declaracion          : 10 11
+declaracion_nativa   : 13
+declaracion_variable : 12
+def_action           : 27 28
+def_clock            : 5
+def_lock             : 4
+def_routine          : 6
+definicion           : 2 3
+expresion            : 31 31 41
+lista_variables      : 9 10
+llamada              : 36 37
+nombre_variable      : 32
 programa             : 0
-rutina               : 6
+tipo                 : 14
+valor                : 14 15
+valor_momento        : 23
 
 Parsing method: LALR
 
 state 0
 
     (0) S' -> . programa
-    (1) programa -> . PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE
+    (1) programa -> . PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE
 
-    PROG            shift and go to state 2
+    PROGRAM         shift and go to state 2
 
     programa                       shift and go to state 1
 
@@ -125,617 +131,933 @@ state 1
 
 state 2
 
-    (1) programa -> PROG . IDENTIFICADOR APERTURA bloque_codigo CIERRE
+    (1) programa -> PROGRAM . IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE
 
     IDENTIFICADOR   shift and go to state 3
 
 
 state 3
 
-    (1) programa -> PROG IDENTIFICADOR . APERTURA bloque_codigo CIERRE
+    (1) programa -> PROGRAM IDENTIFICADOR . APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE
 
-    APERTURA        shift and go to state 4
+    APERTURA_LLAVE  shift and go to state 4
 
 
 state 4
 
-    (1) programa -> PROG IDENTIFICADOR APERTURA . bloque_codigo CIERRE
-    (2) bloque_codigo -> . declaracion
-    (3) bloque_codigo -> . bloque_codigo declaracion
-    (4) declaracion -> . constructor_base
-    (5) declaracion -> . modificador_caracteristica
-    (6) declaracion -> . rutina
-    (7) constructor_base -> . NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE
-    (27) modificador_caracteristica -> . IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE
-    (28) modificador_caracteristica -> . IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE
-    (21) rutina -> . RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE
+    (1) programa -> PROGRAM IDENTIFICADOR APERTURA_LLAVE . bloque_definiciones CIERRE_LLAVE
+    (2) bloque_definiciones -> . bloque_definiciones definicion
+    (3) bloque_definiciones -> . definicion
+    (4) definicion -> . def_lock
+    (5) definicion -> . def_clock
+    (6) definicion -> . def_routine
+    (7) def_lock -> . LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (8) def_clock -> . CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (26) def_routine -> . ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
 
-    NODO            shift and go to state 11
-    IDENTIFICADOR   shift and go to state 5
-    RUTINA          shift and go to state 12
+    LOCK            shift and go to state 10
+    CLOCK           shift and go to state 11
+    ROUTINE         shift and go to state 12
 
-    bloque_codigo                  shift and go to state 6
-    declaracion                    shift and go to state 7
-    constructor_base               shift and go to state 8
-    modificador_caracteristica     shift and go to state 9
-    rutina                         shift and go to state 10
+    bloque_definiciones            shift and go to state 5
+    definicion                     shift and go to state 6
+    def_lock                       shift and go to state 7
+    def_clock                      shift and go to state 8
+    def_routine                    shift and go to state 9
 
 state 5
 
-    (27) modificador_caracteristica -> IDENTIFICADOR . TIENE APERTURA bloque_tiene CIERRE
-    (28) modificador_caracteristica -> IDENTIFICADOR . PUEDE APERTURA bloque_puede CIERRE
+    (1) programa -> PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones . CIERRE_LLAVE
+    (2) bloque_definiciones -> bloque_definiciones . definicion
+    (4) definicion -> . def_lock
+    (5) definicion -> . def_clock
+    (6) definicion -> . def_routine
+    (7) def_lock -> . LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (8) def_clock -> . CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (26) def_routine -> . ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
 
-    TIENE           shift and go to state 13
-    PUEDE           shift and go to state 14
+    CIERRE_LLAVE    shift and go to state 13
+    LOCK            shift and go to state 10
+    CLOCK           shift and go to state 11
+    ROUTINE         shift and go to state 12
 
+    definicion                     shift and go to state 14
+    def_lock                       shift and go to state 7
+    def_clock                      shift and go to state 8
+    def_routine                    shift and go to state 9
 
 state 6
 
-    (1) programa -> PROG IDENTIFICADOR APERTURA bloque_codigo . CIERRE
-    (3) bloque_codigo -> bloque_codigo . declaracion
-    (4) declaracion -> . constructor_base
-    (5) declaracion -> . modificador_caracteristica
-    (6) declaracion -> . rutina
-    (7) constructor_base -> . NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE
-    (27) modificador_caracteristica -> . IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE
-    (28) modificador_caracteristica -> . IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE
-    (21) rutina -> . RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE
+    (3) bloque_definiciones -> definicion .
 
-    CIERRE          shift and go to state 15
-    NODO            shift and go to state 11
-    IDENTIFICADOR   shift and go to state 5
-    RUTINA          shift and go to state 12
+    CIERRE_LLAVE    reduce using rule 3 (bloque_definiciones -> definicion .)
+    LOCK            reduce using rule 3 (bloque_definiciones -> definicion .)
+    CLOCK           reduce using rule 3 (bloque_definiciones -> definicion .)
+    ROUTINE         reduce using rule 3 (bloque_definiciones -> definicion .)
 
-    declaracion                    shift and go to state 16
-    constructor_base               shift and go to state 8
-    modificador_caracteristica     shift and go to state 9
-    rutina                         shift and go to state 10
 
 state 7
 
-    (2) bloque_codigo -> declaracion .
+    (4) definicion -> def_lock .
 
-    CIERRE          reduce using rule 2 (bloque_codigo -> declaracion .)
-    NODO            reduce using rule 2 (bloque_codigo -> declaracion .)
-    IDENTIFICADOR   reduce using rule 2 (bloque_codigo -> declaracion .)
-    RUTINA          reduce using rule 2 (bloque_codigo -> declaracion .)
+    CIERRE_LLAVE    reduce using rule 4 (definicion -> def_lock .)
+    LOCK            reduce using rule 4 (definicion -> def_lock .)
+    CLOCK           reduce using rule 4 (definicion -> def_lock .)
+    ROUTINE         reduce using rule 4 (definicion -> def_lock .)
 
 
 state 8
 
-    (4) declaracion -> constructor_base .
+    (5) definicion -> def_clock .
 
-    CIERRE          reduce using rule 4 (declaracion -> constructor_base .)
-    NODO            reduce using rule 4 (declaracion -> constructor_base .)
-    IDENTIFICADOR   reduce using rule 4 (declaracion -> constructor_base .)
-    RUTINA          reduce using rule 4 (declaracion -> constructor_base .)
+    CIERRE_LLAVE    reduce using rule 5 (definicion -> def_clock .)
+    LOCK            reduce using rule 5 (definicion -> def_clock .)
+    CLOCK           reduce using rule 5 (definicion -> def_clock .)
+    ROUTINE         reduce using rule 5 (definicion -> def_clock .)
 
 
 state 9
 
-    (5) declaracion -> modificador_caracteristica .
+    (6) definicion -> def_routine .
 
-    CIERRE          reduce using rule 5 (declaracion -> modificador_caracteristica .)
-    NODO            reduce using rule 5 (declaracion -> modificador_caracteristica .)
-    IDENTIFICADOR   reduce using rule 5 (declaracion -> modificador_caracteristica .)
-    RUTINA          reduce using rule 5 (declaracion -> modificador_caracteristica .)
+    CIERRE_LLAVE    reduce using rule 6 (definicion -> def_routine .)
+    LOCK            reduce using rule 6 (definicion -> def_routine .)
+    CLOCK           reduce using rule 6 (definicion -> def_routine .)
+    ROUTINE         reduce using rule 6 (definicion -> def_routine .)
 
 
 state 10
 
-    (6) declaracion -> rutina .
+    (7) def_lock -> LOCK . IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    CIERRE          reduce using rule 6 (declaracion -> rutina .)
-    NODO            reduce using rule 6 (declaracion -> rutina .)
-    IDENTIFICADOR   reduce using rule 6 (declaracion -> rutina .)
-    RUTINA          reduce using rule 6 (declaracion -> rutina .)
+    IDENTIFICADOR   shift and go to state 15
 
 
 state 11
 
-    (7) constructor_base -> NODO . IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE
+    (8) def_clock -> CLOCK . IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    IDENTIFICADOR   shift and go to state 17
+    IDENTIFICADOR   shift and go to state 16
 
 
 state 12
 
-    (21) rutina -> RUTINA . IDENTIFICADOR APERTURA bloque_puede CIERRE
+    (26) def_routine -> ROUTINE . IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
 
-    IDENTIFICADOR   shift and go to state 18
+    IDENTIFICADOR   shift and go to state 17
 
 
 state 13
 
-    (27) modificador_caracteristica -> IDENTIFICADOR TIENE . APERTURA bloque_tiene CIERRE
+    (1) programa -> PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE .
 
-    APERTURA        shift and go to state 19
+    $end            reduce using rule 1 (programa -> PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE .)
 
 
 state 14
 
-    (28) modificador_caracteristica -> IDENTIFICADOR PUEDE . APERTURA bloque_puede CIERRE
+    (2) bloque_definiciones -> bloque_definiciones definicion .
 
-    APERTURA        shift and go to state 20
+    CIERRE_LLAVE    reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
+    LOCK            reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
+    CLOCK           reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
+    ROUTINE         reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
 
 
 state 15
 
-    (1) programa -> PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE .
+    (7) def_lock -> LOCK IDENTIFICADOR . LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    $end            reduce using rule 1 (programa -> PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE .)
+    LPAREN          shift and go to state 18
 
 
 state 16
 
-    (3) bloque_codigo -> bloque_codigo declaracion .
+    (8) def_clock -> CLOCK IDENTIFICADOR . LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    CIERRE          reduce using rule 3 (bloque_codigo -> bloque_codigo declaracion .)
-    NODO            reduce using rule 3 (bloque_codigo -> bloque_codigo declaracion .)
-    IDENTIFICADOR   reduce using rule 3 (bloque_codigo -> bloque_codigo declaracion .)
-    RUTINA          reduce using rule 3 (bloque_codigo -> bloque_codigo declaracion .)
+    LPAREN          shift and go to state 19
 
 
 state 17
 
-    (7) constructor_base -> NODO IDENTIFICADOR . OBJETO APERTURA bloque_caracteristicas CIERRE
+    (26) def_routine -> ROUTINE IDENTIFICADOR . APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
 
-    OBJETO          shift and go to state 21
+    APERTURA_LLAVE  shift and go to state 20
 
 
 state 18
 
-    (21) rutina -> RUTINA IDENTIFICADOR . APERTURA bloque_puede CIERRE
+    (7) def_lock -> LOCK IDENTIFICADOR LPAREN . RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    APERTURA        shift and go to state 22
+    RPAREN          shift and go to state 21
 
 
 state 19
 
-    (27) modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA . bloque_tiene CIERRE
-    (12) bloque_tiene -> . asignacion
-    (13) bloque_tiene -> . bloque_tiene asignacion
-    (14) asignacion -> . assign_type IDENTIFICADOR IGUAL NUMERO
-    (15) assign_type -> . IDENTIFICADOR
-    (16) assign_type -> . EJE
-    (17) assign_type -> . MOTORX
-    (18) assign_type -> . MOTORY
+    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN . RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    IDENTIFICADOR   shift and go to state 23
-    EJE             shift and go to state 27
-    MOTORX          shift and go to state 28
-    MOTORY          shift and go to state 29
+    RPAREN          shift and go to state 22
 
-    bloque_tiene                   shift and go to state 24
-    asignacion                     shift and go to state 25
-    assign_type                    shift and go to state 26
 
 state 20
 
-    (28) modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA . bloque_puede CIERRE
-    (19) bloque_puede -> . funcion
-    (20) bloque_puede -> . bloque_puede funcion
-    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+    (26) def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE . bloque_acciones CIERRE_LLAVE
+    (27) bloque_acciones -> . bloque_acciones def_action
+    (28) bloque_acciones -> . def_action
+    (29) def_action -> . ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
 
-    IDENTIFICADOR   shift and go to state 30
+    ACTION          shift and go to state 25
 
-    bloque_puede                   shift and go to state 31
-    funcion                        shift and go to state 32
+    bloque_acciones                shift and go to state 23
+    def_action                     shift and go to state 24
 
 state 21
 
-    (7) constructor_base -> NODO IDENTIFICADOR OBJETO . APERTURA bloque_caracteristicas CIERRE
+    (7) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN . APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    APERTURA        shift and go to state 33
+    APERTURA_LLAVE  shift and go to state 26
 
 
 state 22
 
-    (21) rutina -> RUTINA IDENTIFICADOR APERTURA . bloque_puede CIERRE
-    (19) bloque_puede -> . funcion
-    (20) bloque_puede -> . bloque_puede funcion
-    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN . APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    IDENTIFICADOR   shift and go to state 30
+    APERTURA_LLAVE  shift and go to state 27
 
-    bloque_puede                   shift and go to state 34
-    funcion                        shift and go to state 32
 
 state 23
 
-    (15) assign_type -> IDENTIFICADOR .
+    (26) def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones . CIERRE_LLAVE
+    (27) bloque_acciones -> bloque_acciones . def_action
+    (29) def_action -> . ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
 
-    IDENTIFICADOR   reduce using rule 15 (assign_type -> IDENTIFICADOR .)
+    CIERRE_LLAVE    shift and go to state 28
+    ACTION          shift and go to state 25
 
+    def_action                     shift and go to state 29
 
 state 24
 
-    (27) modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene . CIERRE
-    (13) bloque_tiene -> bloque_tiene . asignacion
-    (14) asignacion -> . assign_type IDENTIFICADOR IGUAL NUMERO
-    (15) assign_type -> . IDENTIFICADOR
-    (16) assign_type -> . EJE
-    (17) assign_type -> . MOTORX
-    (18) assign_type -> . MOTORY
+    (28) bloque_acciones -> def_action .
 
-    CIERRE          shift and go to state 35
-    IDENTIFICADOR   shift and go to state 23
-    EJE             shift and go to state 27
-    MOTORX          shift and go to state 28
-    MOTORY          shift and go to state 29
+    CIERRE_LLAVE    reduce using rule 28 (bloque_acciones -> def_action .)
+    ACTION          reduce using rule 28 (bloque_acciones -> def_action .)
 
-    asignacion                     shift and go to state 36
-    assign_type                    shift and go to state 26
 
 state 25
 
-    (12) bloque_tiene -> asignacion .
+    (29) def_action -> ACTION . IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
 
-    CIERRE          reduce using rule 12 (bloque_tiene -> asignacion .)
-    IDENTIFICADOR   reduce using rule 12 (bloque_tiene -> asignacion .)
-    EJE             reduce using rule 12 (bloque_tiene -> asignacion .)
-    MOTORX          reduce using rule 12 (bloque_tiene -> asignacion .)
-    MOTORY          reduce using rule 12 (bloque_tiene -> asignacion .)
+    IDENTIFICADOR   shift and go to state 30
 
 
 state 26
 
-    (14) asignacion -> assign_type . IDENTIFICADOR IGUAL NUMERO
+    (7) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE . bloque_estado CIERRE_LLAVE
+    (9) bloque_estado -> . STATE DOS_PUNTOS lista_variables
 
-    IDENTIFICADOR   shift and go to state 37
+    STATE           shift and go to state 32
 
+    bloque_estado                  shift and go to state 31
 
 state 27
 
-    (16) assign_type -> EJE .
+    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE . bloque_estado CIERRE_LLAVE
+    (9) bloque_estado -> . STATE DOS_PUNTOS lista_variables
 
-    IDENTIFICADOR   reduce using rule 16 (assign_type -> EJE .)
+    STATE           shift and go to state 32
 
+    bloque_estado                  shift and go to state 33
 
 state 28
 
-    (17) assign_type -> MOTORX .
+    (26) def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .
 
-    IDENTIFICADOR   reduce using rule 17 (assign_type -> MOTORX .)
+    CIERRE_LLAVE    reduce using rule 26 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    LOCK            reduce using rule 26 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    CLOCK           reduce using rule 26 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    ROUTINE         reduce using rule 26 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
 
 
 state 29
 
-    (18) assign_type -> MOTORY .
+    (27) bloque_acciones -> bloque_acciones def_action .
 
-    IDENTIFICADOR   reduce using rule 18 (assign_type -> MOTORY .)
+    CIERRE_LLAVE    reduce using rule 27 (bloque_acciones -> bloque_acciones def_action .)
+    ACTION          reduce using rule 27 (bloque_acciones -> bloque_acciones def_action .)
 
 
 state 30
 
-    (22) funcion -> IDENTIFICADOR . LPAREN argumentos RPAREN
+    (29) def_action -> ACTION IDENTIFICADOR . APERTURA_LLAVE clausula_when CIERRE_LLAVE
 
-    LPAREN          shift and go to state 38
+    APERTURA_LLAVE  shift and go to state 34
 
 
 state 31
 
-    (28) modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede . CIERRE
-    (20) bloque_puede -> bloque_puede . funcion
-    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+    (7) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado . CIERRE_LLAVE
 
-    CIERRE          shift and go to state 39
-    IDENTIFICADOR   shift and go to state 30
+    CIERRE_LLAVE    shift and go to state 35
 
-    funcion                        shift and go to state 40
 
 state 32
 
-    (19) bloque_puede -> funcion .
+    (9) bloque_estado -> STATE . DOS_PUNTOS lista_variables
 
-    CIERRE          reduce using rule 19 (bloque_puede -> funcion .)
-    IDENTIFICADOR   reduce using rule 19 (bloque_puede -> funcion .)
+    DOS_PUNTOS      shift and go to state 36
 
 
 state 33
 
-    (7) constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA . bloque_caracteristicas CIERRE
-    (8) bloque_caracteristicas -> . caracteristica
-    (9) bloque_caracteristicas -> . bloque_caracteristicas caracteristica
-    (10) caracteristica -> . TIENE APERTURA bloque_tiene CIERRE
-    (11) caracteristica -> . PUEDE APERTURA bloque_puede CIERRE
+    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado . CIERRE_LLAVE
 
-    TIENE           shift and go to state 43
-    PUEDE           shift and go to state 44
+    CIERRE_LLAVE    shift and go to state 37
 
-    bloque_caracteristicas         shift and go to state 41
-    caracteristica                 shift and go to state 42
 
 state 34
 
-    (21) rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede . CIERRE
-    (20) bloque_puede -> bloque_puede . funcion
-    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+    (29) def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE . clausula_when CIERRE_LLAVE
+    (30) clausula_when -> . WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia
 
-    CIERRE          shift and go to state 45
-    IDENTIFICADOR   shift and go to state 30
+    WHEN            shift and go to state 39
 
-    funcion                        shift and go to state 40
+    clausula_when                  shift and go to state 38
 
 state 35
 
-    (27) modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .
+    (7) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .
 
-    CIERRE          reduce using rule 27 (modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .)
-    NODO            reduce using rule 27 (modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .)
-    IDENTIFICADOR   reduce using rule 27 (modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .)
-    RUTINA          reduce using rule 27 (modificador_caracteristica -> IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE .)
+    CIERRE_LLAVE    reduce using rule 7 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    LOCK            reduce using rule 7 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    CLOCK           reduce using rule 7 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    ROUTINE         reduce using rule 7 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
 
 
 state 36
 
-    (13) bloque_tiene -> bloque_tiene asignacion .
+    (9) bloque_estado -> STATE DOS_PUNTOS . lista_variables
+    (10) lista_variables -> . lista_variables declaracion
+    (11) lista_variables -> . declaracion
+    (12) declaracion -> . declaracion_variable
+    (13) declaracion -> . declaracion_nativa
+    (14) declaracion_variable -> . tipo IDENTIFICADOR IGUAL valor
+    (15) declaracion_nativa -> . NATIVA IGUAL valor
+    (16) tipo -> . BOOLEAN
+    (17) tipo -> . STRING
+    (18) tipo -> . TIME
+    (19) tipo -> . MOMENT
 
-    CIERRE          reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
-    IDENTIFICADOR   reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
-    EJE             reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
-    MOTORX          reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
-    MOTORY          reduce using rule 13 (bloque_tiene -> bloque_tiene asignacion .)
+    NATIVA          shift and go to state 45
+    BOOLEAN         shift and go to state 46
+    STRING          shift and go to state 47
+    TIME            shift and go to state 48
+    MOMENT          shift and go to state 49
 
+    lista_variables                shift and go to state 40
+    declaracion                    shift and go to state 41
+    declaracion_variable           shift and go to state 42
+    declaracion_nativa             shift and go to state 43
+    tipo                           shift and go to state 44
 
 state 37
 
-    (14) asignacion -> assign_type IDENTIFICADOR . IGUAL NUMERO
+    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .
 
-    IGUAL           shift and go to state 46
+    CIERRE_LLAVE    reduce using rule 8 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    LOCK            reduce using rule 8 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    CLOCK           reduce using rule 8 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    ROUTINE         reduce using rule 8 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
 
 
 state 38
 
-    (22) funcion -> IDENTIFICADOR LPAREN . argumentos RPAREN
-    (23) argumentos -> . argumento
-    (24) argumentos -> . argumentos COMA argumento
-    (25) argumento -> . IDENTIFICADOR
-    (26) argumento -> . NUMERO
+    (29) def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when . CIERRE_LLAVE
 
-    IDENTIFICADOR   shift and go to state 47
-    NUMERO          shift and go to state 50
+    CIERRE_LLAVE    shift and go to state 50
 
-    argumentos                     shift and go to state 48
-    argumento                      shift and go to state 49
 
 state 39
 
-    (28) modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .
+    (30) clausula_when -> WHEN . DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia
 
-    CIERRE          reduce using rule 28 (modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .)
-    NODO            reduce using rule 28 (modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .)
-    IDENTIFICADOR   reduce using rule 28 (modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .)
-    RUTINA          reduce using rule 28 (modificador_caracteristica -> IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE .)
+    DOS_PUNTOS      shift and go to state 51
 
 
 state 40
 
-    (20) bloque_puede -> bloque_puede funcion .
+    (9) bloque_estado -> STATE DOS_PUNTOS lista_variables .
+    (10) lista_variables -> lista_variables . declaracion
+    (12) declaracion -> . declaracion_variable
+    (13) declaracion -> . declaracion_nativa
+    (14) declaracion_variable -> . tipo IDENTIFICADOR IGUAL valor
+    (15) declaracion_nativa -> . NATIVA IGUAL valor
+    (16) tipo -> . BOOLEAN
+    (17) tipo -> . STRING
+    (18) tipo -> . TIME
+    (19) tipo -> . MOMENT
 
-    CIERRE          reduce using rule 20 (bloque_puede -> bloque_puede funcion .)
-    IDENTIFICADOR   reduce using rule 20 (bloque_puede -> bloque_puede funcion .)
+    CIERRE_LLAVE    reduce using rule 9 (bloque_estado -> STATE DOS_PUNTOS lista_variables .)
+    NATIVA          shift and go to state 45
+    BOOLEAN         shift and go to state 46
+    STRING          shift and go to state 47
+    TIME            shift and go to state 48
+    MOMENT          shift and go to state 49
 
+    declaracion                    shift and go to state 52
+    declaracion_variable           shift and go to state 42
+    declaracion_nativa             shift and go to state 43
+    tipo                           shift and go to state 44
 
 state 41
 
-    (7) constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas . CIERRE
-    (9) bloque_caracteristicas -> bloque_caracteristicas . caracteristica
-    (10) caracteristica -> . TIENE APERTURA bloque_tiene CIERRE
-    (11) caracteristica -> . PUEDE APERTURA bloque_puede CIERRE
+    (11) lista_variables -> declaracion .
 
-    CIERRE          shift and go to state 51
-    TIENE           shift and go to state 43
-    PUEDE           shift and go to state 44
+    NATIVA          reduce using rule 11 (lista_variables -> declaracion .)
+    BOOLEAN         reduce using rule 11 (lista_variables -> declaracion .)
+    STRING          reduce using rule 11 (lista_variables -> declaracion .)
+    TIME            reduce using rule 11 (lista_variables -> declaracion .)
+    MOMENT          reduce using rule 11 (lista_variables -> declaracion .)
+    CIERRE_LLAVE    reduce using rule 11 (lista_variables -> declaracion .)
 
-    caracteristica                 shift and go to state 52
 
 state 42
 
-    (8) bloque_caracteristicas -> caracteristica .
+    (12) declaracion -> declaracion_variable .
 
-    CIERRE          reduce using rule 8 (bloque_caracteristicas -> caracteristica .)
-    TIENE           reduce using rule 8 (bloque_caracteristicas -> caracteristica .)
-    PUEDE           reduce using rule 8 (bloque_caracteristicas -> caracteristica .)
+    NATIVA          reduce using rule 12 (declaracion -> declaracion_variable .)
+    BOOLEAN         reduce using rule 12 (declaracion -> declaracion_variable .)
+    STRING          reduce using rule 12 (declaracion -> declaracion_variable .)
+    TIME            reduce using rule 12 (declaracion -> declaracion_variable .)
+    MOMENT          reduce using rule 12 (declaracion -> declaracion_variable .)
+    CIERRE_LLAVE    reduce using rule 12 (declaracion -> declaracion_variable .)
 
 
 state 43
 
-    (10) caracteristica -> TIENE . APERTURA bloque_tiene CIERRE
+    (13) declaracion -> declaracion_nativa .
 
-    APERTURA        shift and go to state 53
+    NATIVA          reduce using rule 13 (declaracion -> declaracion_nativa .)
+    BOOLEAN         reduce using rule 13 (declaracion -> declaracion_nativa .)
+    STRING          reduce using rule 13 (declaracion -> declaracion_nativa .)
+    TIME            reduce using rule 13 (declaracion -> declaracion_nativa .)
+    MOMENT          reduce using rule 13 (declaracion -> declaracion_nativa .)
+    CIERRE_LLAVE    reduce using rule 13 (declaracion -> declaracion_nativa .)
 
 
 state 44
 
-    (11) caracteristica -> PUEDE . APERTURA bloque_puede CIERRE
+    (14) declaracion_variable -> tipo . IDENTIFICADOR IGUAL valor
 
-    APERTURA        shift and go to state 54
+    IDENTIFICADOR   shift and go to state 53
 
 
 state 45
 
-    (21) rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .
+    (15) declaracion_nativa -> NATIVA . IGUAL valor
 
-    CIERRE          reduce using rule 21 (rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .)
-    NODO            reduce using rule 21 (rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .)
-    IDENTIFICADOR   reduce using rule 21 (rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .)
-    RUTINA          reduce using rule 21 (rutina -> RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE .)
+    IGUAL           shift and go to state 54
 
 
 state 46
 
-    (14) asignacion -> assign_type IDENTIFICADOR IGUAL . NUMERO
+    (16) tipo -> BOOLEAN .
 
-    NUMERO          shift and go to state 55
+    IDENTIFICADOR   reduce using rule 16 (tipo -> BOOLEAN .)
 
 
 state 47
 
-    (25) argumento -> IDENTIFICADOR .
+    (17) tipo -> STRING .
 
-    RPAREN          reduce using rule 25 (argumento -> IDENTIFICADOR .)
-    COMA            reduce using rule 25 (argumento -> IDENTIFICADOR .)
+    IDENTIFICADOR   reduce using rule 17 (tipo -> STRING .)
 
 
 state 48
 
-    (22) funcion -> IDENTIFICADOR LPAREN argumentos . RPAREN
-    (24) argumentos -> argumentos . COMA argumento
+    (18) tipo -> TIME .
 
-    RPAREN          shift and go to state 56
-    COMA            shift and go to state 57
+    IDENTIFICADOR   reduce using rule 18 (tipo -> TIME .)
 
 
 state 49
 
-    (23) argumentos -> argumento .
+    (19) tipo -> MOMENT .
 
-    RPAREN          reduce using rule 23 (argumentos -> argumento .)
-    COMA            reduce using rule 23 (argumentos -> argumento .)
+    IDENTIFICADOR   reduce using rule 19 (tipo -> MOMENT .)
 
 
 state 50
 
-    (26) argumento -> NUMERO .
+    (29) def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE .
 
-    RPAREN          reduce using rule 26 (argumento -> NUMERO .)
-    COMA            reduce using rule 26 (argumento -> NUMERO .)
+    CIERRE_LLAVE    reduce using rule 29 (def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE .)
+    ACTION          reduce using rule 29 (def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE .)
 
 
 state 51
 
-    (7) constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .
+    (30) clausula_when -> WHEN DOS_PUNTOS . LPAREN condicion RPAREN FLECHA consecuencia
 
-    CIERRE          reduce using rule 7 (constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .)
-    NODO            reduce using rule 7 (constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .)
-    IDENTIFICADOR   reduce using rule 7 (constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .)
-    RUTINA          reduce using rule 7 (constructor_base -> NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE .)
+    LPAREN          shift and go to state 55
 
 
 state 52
 
-    (9) bloque_caracteristicas -> bloque_caracteristicas caracteristica .
+    (10) lista_variables -> lista_variables declaracion .
 
-    CIERRE          reduce using rule 9 (bloque_caracteristicas -> bloque_caracteristicas caracteristica .)
-    TIENE           reduce using rule 9 (bloque_caracteristicas -> bloque_caracteristicas caracteristica .)
-    PUEDE           reduce using rule 9 (bloque_caracteristicas -> bloque_caracteristicas caracteristica .)
+    NATIVA          reduce using rule 10 (lista_variables -> lista_variables declaracion .)
+    BOOLEAN         reduce using rule 10 (lista_variables -> lista_variables declaracion .)
+    STRING          reduce using rule 10 (lista_variables -> lista_variables declaracion .)
+    TIME            reduce using rule 10 (lista_variables -> lista_variables declaracion .)
+    MOMENT          reduce using rule 10 (lista_variables -> lista_variables declaracion .)
+    CIERRE_LLAVE    reduce using rule 10 (lista_variables -> lista_variables declaracion .)
 
 
 state 53
 
-    (10) caracteristica -> TIENE APERTURA . bloque_tiene CIERRE
-    (12) bloque_tiene -> . asignacion
-    (13) bloque_tiene -> . bloque_tiene asignacion
-    (14) asignacion -> . assign_type IDENTIFICADOR IGUAL NUMERO
-    (15) assign_type -> . IDENTIFICADOR
-    (16) assign_type -> . EJE
-    (17) assign_type -> . MOTORX
-    (18) assign_type -> . MOTORY
+    (14) declaracion_variable -> tipo IDENTIFICADOR . IGUAL valor
 
-    IDENTIFICADOR   shift and go to state 23
-    EJE             shift and go to state 27
-    MOTORX          shift and go to state 28
-    MOTORY          shift and go to state 29
+    IGUAL           shift and go to state 56
 
-    bloque_tiene                   shift and go to state 58
-    asignacion                     shift and go to state 25
-    assign_type                    shift and go to state 26
 
 state 54
 
-    (11) caracteristica -> PUEDE APERTURA . bloque_puede CIERRE
-    (19) bloque_puede -> . funcion
-    (20) bloque_puede -> . bloque_puede funcion
-    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+    (15) declaracion_nativa -> NATIVA IGUAL . valor
+    (20) valor -> . TRUE
+    (21) valor -> . FALSE
+    (22) valor -> . CADENA
+    (23) valor -> . valor_momento
+    (24) valor -> . CURRENT_TIME LPAREN RPAREN
+    (25) valor_momento -> . TIEMPO
 
-    IDENTIFICADOR   shift and go to state 30
+    TRUE            shift and go to state 58
+    FALSE           shift and go to state 59
+    CADENA          shift and go to state 60
+    CURRENT_TIME    shift and go to state 62
+    TIEMPO          shift and go to state 63
 
-    bloque_puede                   shift and go to state 59
-    funcion                        shift and go to state 32
+    valor                          shift and go to state 57
+    valor_momento                  shift and go to state 61
 
 state 55
 
-    (14) asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .
+    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN . condicion RPAREN FLECHA consecuencia
+    (31) condicion -> . expresion opLOGICO expresion
+    (32) expresion -> . IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
+    (33) expresion -> . LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
 
-    CIERRE          reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
-    IDENTIFICADOR   reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
-    EJE             reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
-    MOTORX          reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
-    MOTORY          reduce using rule 14 (asignacion -> assign_type IDENTIFICADOR IGUAL NUMERO .)
+    IDENTIFICADOR   shift and go to state 67
+    LPAREN          shift and go to state 64
 
+    condicion                      shift and go to state 65
+    expresion                      shift and go to state 66
 
 state 56
 
-    (22) funcion -> IDENTIFICADOR LPAREN argumentos RPAREN .
+    (14) declaracion_variable -> tipo IDENTIFICADOR IGUAL . valor
+    (20) valor -> . TRUE
+    (21) valor -> . FALSE
+    (22) valor -> . CADENA
+    (23) valor -> . valor_momento
+    (24) valor -> . CURRENT_TIME LPAREN RPAREN
+    (25) valor_momento -> . TIEMPO
 
-    CIERRE          reduce using rule 22 (funcion -> IDENTIFICADOR LPAREN argumentos RPAREN .)
-    IDENTIFICADOR   reduce using rule 22 (funcion -> IDENTIFICADOR LPAREN argumentos RPAREN .)
+    TRUE            shift and go to state 58
+    FALSE           shift and go to state 59
+    CADENA          shift and go to state 60
+    CURRENT_TIME    shift and go to state 62
+    TIEMPO          shift and go to state 63
 
+    valor                          shift and go to state 68
+    valor_momento                  shift and go to state 61
 
 state 57
 
-    (24) argumentos -> argumentos COMA . argumento
-    (25) argumento -> . IDENTIFICADOR
-    (26) argumento -> . NUMERO
+    (15) declaracion_nativa -> NATIVA IGUAL valor .
 
-    IDENTIFICADOR   shift and go to state 47
-    NUMERO          shift and go to state 50
+    NATIVA          reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
+    BOOLEAN         reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
+    STRING          reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
+    TIME            reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
+    MOMENT          reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
+    CIERRE_LLAVE    reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
 
-    argumento                      shift and go to state 60
 
 state 58
 
-    (10) caracteristica -> TIENE APERTURA bloque_tiene . CIERRE
-    (13) bloque_tiene -> bloque_tiene . asignacion
-    (14) asignacion -> . assign_type IDENTIFICADOR IGUAL NUMERO
-    (15) assign_type -> . IDENTIFICADOR
-    (16) assign_type -> . EJE
-    (17) assign_type -> . MOTORX
-    (18) assign_type -> . MOTORY
+    (20) valor -> TRUE .
 
-    CIERRE          shift and go to state 61
-    IDENTIFICADOR   shift and go to state 23
-    EJE             shift and go to state 27
-    MOTORX          shift and go to state 28
-    MOTORY          shift and go to state 29
+    NATIVA          reduce using rule 20 (valor -> TRUE .)
+    BOOLEAN         reduce using rule 20 (valor -> TRUE .)
+    STRING          reduce using rule 20 (valor -> TRUE .)
+    TIME            reduce using rule 20 (valor -> TRUE .)
+    MOMENT          reduce using rule 20 (valor -> TRUE .)
+    CIERRE_LLAVE    reduce using rule 20 (valor -> TRUE .)
 
-    asignacion                     shift and go to state 36
-    assign_type                    shift and go to state 26
 
 state 59
 
-    (11) caracteristica -> PUEDE APERTURA bloque_puede . CIERRE
-    (20) bloque_puede -> bloque_puede . funcion
-    (22) funcion -> . IDENTIFICADOR LPAREN argumentos RPAREN
+    (21) valor -> FALSE .
 
-    CIERRE          shift and go to state 62
-    IDENTIFICADOR   shift and go to state 30
+    NATIVA          reduce using rule 21 (valor -> FALSE .)
+    BOOLEAN         reduce using rule 21 (valor -> FALSE .)
+    STRING          reduce using rule 21 (valor -> FALSE .)
+    TIME            reduce using rule 21 (valor -> FALSE .)
+    MOMENT          reduce using rule 21 (valor -> FALSE .)
+    CIERRE_LLAVE    reduce using rule 21 (valor -> FALSE .)
 
-    funcion                        shift and go to state 40
 
 state 60
 
-    (24) argumentos -> argumentos COMA argumento .
+    (22) valor -> CADENA .
 
-    RPAREN          reduce using rule 24 (argumentos -> argumentos COMA argumento .)
-    COMA            reduce using rule 24 (argumentos -> argumentos COMA argumento .)
+    NATIVA          reduce using rule 22 (valor -> CADENA .)
+    BOOLEAN         reduce using rule 22 (valor -> CADENA .)
+    STRING          reduce using rule 22 (valor -> CADENA .)
+    TIME            reduce using rule 22 (valor -> CADENA .)
+    MOMENT          reduce using rule 22 (valor -> CADENA .)
+    CIERRE_LLAVE    reduce using rule 22 (valor -> CADENA .)
 
 
 state 61
 
-    (10) caracteristica -> TIENE APERTURA bloque_tiene CIERRE .
+    (23) valor -> valor_momento .
 
-    CIERRE          reduce using rule 10 (caracteristica -> TIENE APERTURA bloque_tiene CIERRE .)
-    TIENE           reduce using rule 10 (caracteristica -> TIENE APERTURA bloque_tiene CIERRE .)
-    PUEDE           reduce using rule 10 (caracteristica -> TIENE APERTURA bloque_tiene CIERRE .)
+    NATIVA          reduce using rule 23 (valor -> valor_momento .)
+    BOOLEAN         reduce using rule 23 (valor -> valor_momento .)
+    STRING          reduce using rule 23 (valor -> valor_momento .)
+    TIME            reduce using rule 23 (valor -> valor_momento .)
+    MOMENT          reduce using rule 23 (valor -> valor_momento .)
+    CIERRE_LLAVE    reduce using rule 23 (valor -> valor_momento .)
 
 
 state 62
 
-    (11) caracteristica -> PUEDE APERTURA bloque_puede CIERRE .
+    (24) valor -> CURRENT_TIME . LPAREN RPAREN
 
-    CIERRE          reduce using rule 11 (caracteristica -> PUEDE APERTURA bloque_puede CIERRE .)
-    TIENE           reduce using rule 11 (caracteristica -> PUEDE APERTURA bloque_puede CIERRE .)
-    PUEDE           reduce using rule 11 (caracteristica -> PUEDE APERTURA bloque_puede CIERRE .)
+    LPAREN          shift and go to state 69
+
+
+state 63
+
+    (25) valor_momento -> TIEMPO .
+
+    NATIVA          reduce using rule 25 (valor_momento -> TIEMPO .)
+    BOOLEAN         reduce using rule 25 (valor_momento -> TIEMPO .)
+    STRING          reduce using rule 25 (valor_momento -> TIEMPO .)
+    TIME            reduce using rule 25 (valor_momento -> TIEMPO .)
+    MOMENT          reduce using rule 25 (valor_momento -> TIEMPO .)
+    CIERRE_LLAVE    reduce using rule 25 (valor_momento -> TIEMPO .)
+
+
+state 64
+
+    (33) expresion -> LPAREN . IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
+
+    IDENTIFICADOR   shift and go to state 70
+
+
+state 65
+
+    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion . RPAREN FLECHA consecuencia
+
+    RPAREN          shift and go to state 71
+
+
+state 66
+
+    (31) condicion -> expresion . opLOGICO expresion
+
+    opLOGICO        shift and go to state 72
+
+
+state 67
+
+    (32) expresion -> IDENTIFICADOR . PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
+
+    PUNTO           shift and go to state 73
+
+
+state 68
+
+    (14) declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .
+
+    NATIVA          reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    BOOLEAN         reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    STRING          reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    TIME            reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    MOMENT          reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    CIERRE_LLAVE    reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+
+
+state 69
+
+    (24) valor -> CURRENT_TIME LPAREN . RPAREN
+
+    RPAREN          shift and go to state 74
+
+
+state 70
+
+    (33) expresion -> LPAREN IDENTIFICADOR . RPAREN PUNTO CHECK LPAREN RPAREN
+
+    RPAREN          shift and go to state 75
+
+
+state 71
+
+    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN . FLECHA consecuencia
+
+    FLECHA          shift and go to state 76
+
+
+state 72
+
+    (31) condicion -> expresion opLOGICO . expresion
+    (32) expresion -> . IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
+    (33) expresion -> . LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
+
+    IDENTIFICADOR   shift and go to state 67
+    LPAREN          shift and go to state 64
+
+    expresion                      shift and go to state 77
+
+state 73
+
+    (32) expresion -> IDENTIFICADOR PUNTO . nombre_variable PUNTO CHECK LPAREN RPAREN
+    (34) nombre_variable -> . IDENTIFICADOR
+    (35) nombre_variable -> . NATIVA
+
+    IDENTIFICADOR   shift and go to state 78
+    NATIVA          shift and go to state 80
+
+    nombre_variable                shift and go to state 79
+
+state 74
+
+    (24) valor -> CURRENT_TIME LPAREN RPAREN .
+
+    NATIVA          reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    BOOLEAN         reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    STRING          reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    TIME            reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    MOMENT          reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    CIERRE_LLAVE    reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
+
+
+state 75
+
+    (33) expresion -> LPAREN IDENTIFICADOR RPAREN . PUNTO CHECK LPAREN RPAREN
+
+    PUNTO           shift and go to state 81
+
+
+state 76
+
+    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA . consecuencia
+    (36) consecuencia -> . llamada
+    (37) consecuencia -> . consecuencia COMA llamada
+    (38) llamada -> . SHOW LPAREN argumento_show RPAREN
+    (39) llamada -> . IDENTIFICADOR PUNTO IDENTIFICADOR
+
+    SHOW            shift and go to state 84
+    IDENTIFICADOR   shift and go to state 85
+
+    consecuencia                   shift and go to state 82
+    llamada                        shift and go to state 83
+
+state 77
+
+    (31) condicion -> expresion opLOGICO expresion .
+
+    RPAREN          reduce using rule 31 (condicion -> expresion opLOGICO expresion .)
+
+
+state 78
+
+    (34) nombre_variable -> IDENTIFICADOR .
+
+    PUNTO           reduce using rule 34 (nombre_variable -> IDENTIFICADOR .)
+
+
+state 79
+
+    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable . PUNTO CHECK LPAREN RPAREN
+
+    PUNTO           shift and go to state 86
+
+
+state 80
+
+    (35) nombre_variable -> NATIVA .
+
+    PUNTO           reduce using rule 35 (nombre_variable -> NATIVA .)
+
+
+state 81
+
+    (33) expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO . CHECK LPAREN RPAREN
+
+    CHECK           shift and go to state 87
+
+
+state 82
+
+    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .
+    (37) consecuencia -> consecuencia . COMA llamada
+
+    CIERRE_LLAVE    reduce using rule 30 (clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .)
+    COMA            shift and go to state 88
+
+
+state 83
+
+    (36) consecuencia -> llamada .
+
+    COMA            reduce using rule 36 (consecuencia -> llamada .)
+    CIERRE_LLAVE    reduce using rule 36 (consecuencia -> llamada .)
+
+
+state 84
+
+    (38) llamada -> SHOW . LPAREN argumento_show RPAREN
+
+    LPAREN          shift and go to state 89
+
+
+state 85
+
+    (39) llamada -> IDENTIFICADOR . PUNTO IDENTIFICADOR
+
+    PUNTO           shift and go to state 90
+
+
+state 86
+
+    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO . CHECK LPAREN RPAREN
+
+    CHECK           shift and go to state 91
+
+
+state 87
+
+    (33) expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK . LPAREN RPAREN
+
+    LPAREN          shift and go to state 92
+
+
+state 88
+
+    (37) consecuencia -> consecuencia COMA . llamada
+    (38) llamada -> . SHOW LPAREN argumento_show RPAREN
+    (39) llamada -> . IDENTIFICADOR PUNTO IDENTIFICADOR
+
+    SHOW            shift and go to state 84
+    IDENTIFICADOR   shift and go to state 85
+
+    llamada                        shift and go to state 93
+
+state 89
+
+    (38) llamada -> SHOW LPAREN . argumento_show RPAREN
+    (40) argumento_show -> . CADENA
+    (41) argumento_show -> . expresion
+    (32) expresion -> . IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
+    (33) expresion -> . LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
+
+    CADENA          shift and go to state 95
+    IDENTIFICADOR   shift and go to state 67
+    LPAREN          shift and go to state 64
+
+    argumento_show                 shift and go to state 94
+    expresion                      shift and go to state 96
+
+state 90
+
+    (39) llamada -> IDENTIFICADOR PUNTO . IDENTIFICADOR
+
+    IDENTIFICADOR   shift and go to state 97
+
+
+state 91
+
+    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK . LPAREN RPAREN
+
+    LPAREN          shift and go to state 98
+
+
+state 92
+
+    (33) expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN . RPAREN
+
+    RPAREN          shift and go to state 99
+
+
+state 93
+
+    (37) consecuencia -> consecuencia COMA llamada .
+
+    COMA            reduce using rule 37 (consecuencia -> consecuencia COMA llamada .)
+    CIERRE_LLAVE    reduce using rule 37 (consecuencia -> consecuencia COMA llamada .)
+
+
+state 94
+
+    (38) llamada -> SHOW LPAREN argumento_show . RPAREN
+
+    RPAREN          shift and go to state 100
+
+
+state 95
+
+    (40) argumento_show -> CADENA .
+
+    RPAREN          reduce using rule 40 (argumento_show -> CADENA .)
+
+
+state 96
+
+    (41) argumento_show -> expresion .
+
+    RPAREN          reduce using rule 41 (argumento_show -> expresion .)
+
+
+state 97
+
+    (39) llamada -> IDENTIFICADOR PUNTO IDENTIFICADOR .
+
+    COMA            reduce using rule 39 (llamada -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
+    CIERRE_LLAVE    reduce using rule 39 (llamada -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
+
+
+state 98
+
+    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN . RPAREN
+
+    RPAREN          shift and go to state 101
+
+
+state 99
+
+    (33) expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN .
+
+    opLOGICO        reduce using rule 33 (expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN .)
+    RPAREN          reduce using rule 33 (expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN .)
+
+
+state 100
+
+    (38) llamada -> SHOW LPAREN argumento_show RPAREN .
+
+    COMA            reduce using rule 38 (llamada -> SHOW LPAREN argumento_show RPAREN .)
+    CIERRE_LLAVE    reduce using rule 38 (llamada -> SHOW LPAREN argumento_show RPAREN .)
+
+
+state 101
+
+    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN .
+
+    opLOGICO        reduce using rule 32 (expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN .)
+    RPAREN          reduce using rule 32 (expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN .)
 

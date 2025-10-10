@@ -1,134 +1,151 @@
 import ply.yacc as yacc
 from lexico import tokens
 
-# Variable global para almacenar errores sintácticos
-errores_Sinc_Desc = []
+errores_sintacticos = [] # --- LISTA GLOBAL PARA ERRORES ---
 
 def limpiar_errores_sintacticos():
-    """Limpia la lista de errores antes de un nuevo análisis."""
-    global errores_Sinc_Desc
-    errores_Sinc_Desc.clear()
+    global errores_sintacticos
+    errores_sintacticos.clear()
 
-# --- Definición de la Gramática ---
+# ==========================================================
+# LAS REGLAS (NO TOCAR)
+# ==========================================================
 
 def p_programa(p):
-    """
-    programa : PROG IDENTIFICADOR APERTURA bloque_codigo CIERRE
-    """
+    'programa : PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE'
+    # Esta es una regla de ejemplo, puedes agregar acciones aquí.
     p[0] = ('programa', p[2], p[4])
 
-def p_bloque_codigo(p):
-    """
-    bloque_codigo : declaracion
-                  | bloque_codigo declaracion
-    """
+# Bloque que permite múltiples definiciones
+def p_bloque_definiciones(p):
+    '''bloque_definiciones : bloque_definiciones definicion
+                           | definicion'''
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = p[1] + [p[2]]
+
+def p_definicion(p):
+    '''definicion : def_lock
+                  | def_clock
+                  | def_routine'''
+    p[0] = p[1]
+
+# Definición de LOCK y CLOCK
+def p_def_lock(p):
+    'def_lock : LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE'
+    p[0] = ('lock', p[2], p[6])
+
+def p_def_clock(p):
+    'def_clock : CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE'
+    p[0] = ('clock', p[2], p[6])
+
+# Bloque de estado y variables
+def p_bloque_estado(p):
+    'bloque_estado : STATE DOS_PUNTOS lista_variables'
+    p[0] = ('state', p[3])
+
+def p_lista_variables(p):
+    '''lista_variables : lista_variables declaracion
+                       | declaracion'''
     if len(p) == 2:
         p[0] = [p[1]]
     else:
         p[0] = p[1] + [p[2]]
 
 def p_declaracion(p):
-    """
-    declaracion : constructor_base
-                | modificador_caracteristica
-                | rutina
-    """
+    '''declaracion : declaracion_variable
+                   | declaracion_nativa'''
     p[0] = p[1]
 
-def p_constructor_base(p):
-    """
-    constructor_base : NODO IDENTIFICADOR OBJETO APERTURA bloque_caracteristicas CIERRE
-    """
-    p[0] = ('constructor_base', p[2], p[3], p[5])
+# Regla para variables estándar (tipo id = valor)
+def p_declaracion_variable(p):
+    'declaracion_variable : tipo IDENTIFICADOR IGUAL valor'
+    p[0] = ('variable', p[1], p[2], p[4])
 
-def p_bloque_caracteristicas(p):
-    """
-    bloque_caracteristicas : caracteristica
-                           | bloque_caracteristicas caracteristica
-    """
+# Regla para variables nativas ($id = valor)
+def p_declaracion_nativa(p):
+    'declaracion_nativa : NATIVA IGUAL valor'
+    p[0] = ('nativa', p[1], p[3]) # p[1] es el nombre (ej: 'PASS'), p[3] es el valor
+
+def p_tipo(p):
+    '''tipo : BOOLEAN
+            | STRING
+            | TIME
+            | MOMENT'''
+    p[0] = p[1]
+
+def p_valor(p):
+    '''valor : TRUE
+             | FALSE
+             | CADENA
+             | valor_momento
+             | CURRENT_TIME LPAREN RPAREN'''
+    p[0] = p[1]
+
+def p_valor_momento(p):
+    'valor_momento : TIEMPO'
+    p[0] = p[1]
+
+# Definición de RUTINA y ACCIONES
+def p_def_routine(p):
+    'def_routine : ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE'
+    p[0] = ('routine', p[2], p[4])
+
+def p_bloque_acciones(p):
+    '''bloque_acciones : bloque_acciones def_action
+                       | def_action'''
     if len(p) == 2:
         p[0] = [p[1]]
     else:
         p[0] = p[1] + [p[2]]
 
-def p_caracteristica(p):
-    """
-    caracteristica : TIENE APERTURA bloque_tiene CIERRE
-                   | PUEDE APERTURA bloque_puede CIERRE
-    """
-    p[0] = (p[1], p[3])
-    
-def p_bloque_tiene(p):
-    """
-    bloque_tiene : asignacion
-                 | bloque_tiene asignacion
-    """
-    if len(p) == 2:
-        p[0] = [p[1]]
-    else:
-        p[0] = p[1] + [p[2]]
+def p_def_action(p):
+    'def_action : ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE'
+    p[0] = ('action', p[2], p[4])
 
-def p_asignacion(p):
-    """
-    asignacion : assign_type IDENTIFICADOR IGUAL NUMERO
-    """
-    p[0] = ('asignacion', p[1], p[2], p[4])
+# Cláusula WHEN
+def p_clausula_when(p):
+    'clausula_when : WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia'
+    p[0] = ('when', p[4], p[7])
 
-def p_assign_type(p):
-    """
-    assign_type : IDENTIFICADOR
-                | EJE
-                | MOTORX
-                | MOTORY
-    """
+def p_condicion(p):
+    'condicion : expresion opLOGICO expresion'
+    p[0] = (p[2], p[1], p[3])
+
+def p_expresion(p):
+    '''expresion : IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
+                 | LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN'''
+    if len(p) == 8: # Caso obj.var.check()
+        p[0] = ('check', (p[1], p[3]))
+    else: # Caso (obj).check()
+        p[0] = ('check', p[2])
+
+def p_nombre_variable(p):
+    '''nombre_variable : IDENTIFICADOR
+                       | NATIVA'''
     p[0] = p[1]
 
-def p_bloque_puede(p):
-    """
-    bloque_puede : funcion
-                 | bloque_puede funcion
-    """
+def p_consecuencia(p):
+    '''consecuencia : llamada
+                    | consecuencia COMA llamada'''
     if len(p) == 2:
         p[0] = [p[1]]
     else:
-        p[0] = p[1] + [p[2]]
+        p[0] = p[1] + [p[3]]
 
-def p_rutina(p):
-    """
-    rutina : RUTINA IDENTIFICADOR APERTURA bloque_puede CIERRE
-    """
-    p[0] = ('rutina', p[2], p[4])
-
-def p_funcion(p):
-    """
-    funcion : IDENTIFICADOR LPAREN argumentos RPAREN
-    """
-    p[0] = ('funcion', p[1], p[3])
-
-def p_argumentos(p):
-    """
-    argumentos : argumento
-               | argumentos COMA argumento
-    """
-    if len(p) == 2:
-        p[0] = [p[1]]
+def p_llamada(p):
+    '''llamada : SHOW LPAREN argumento_show RPAREN
+               | IDENTIFICADOR PUNTO IDENTIFICADOR'''
+    if len(p) == 5:
+        p[0] = ('show', p[3])
     else:
-        p[1].append(p[3])
-        p[0] = p[1]
+        p[0] = ('call', p[1], p[3])
 
-def p_argumento(p):
-    """
-    argumento : IDENTIFICADOR
-              | NUMERO
-    """
+def p_argumento_show(p):
+    '''argumento_show : CADENA
+                      | expresion'''
     p[0] = p[1]
-
-def p_modificador_caracteristica(p):
-    """
-    modificador_caracteristica : IDENTIFICADOR TIENE APERTURA bloque_tiene CIERRE
-                               | IDENTIFICADOR PUEDE APERTURA bloque_puede CIERRE
-    """
-    p[0] = ('modificador', p[1], p[2], p[4])
 
 # Manejo de errores sintácticos
 def p_error(p):
@@ -136,7 +153,7 @@ def p_error(p):
     Función de manejo de errores sintácticos que ahora cuenta
     los tabs como un solo carácter para el puntero.
     """
-    global errores_Sinc_Desc
+    global errores_sintacticos
     if p:
         # 1. Obtener el código fuente completo
         codigo_fuente = p.lexer.lexdata
@@ -159,9 +176,9 @@ def p_error(p):
             f"  {puntero}\n"
             f"  > Token inesperado '{p.value}' (tipo {p.type}). Se esperaba una estructura diferente."
         )
-        errores_Sinc_Desc.append(msg)
+        errores_sintacticos.append(msg)
     else:
-        errores_Sinc_Desc.append("Error de sintaxis: Fin de archivo inesperado (EOF).")
+        errores_sintacticos.append("Error de sintaxis: Fin de archivo inesperado (EOF).")
 
 # Construir el analizador
 parser = yacc.yacc()
