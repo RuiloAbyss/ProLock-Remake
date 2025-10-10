@@ -132,15 +132,36 @@ def p_modificador_caracteristica(p):
 
 # Manejo de errores sintácticos
 def p_error(p):
+    """
+    Función de manejo de errores sintácticos que ahora cuenta
+    los tabs como un solo carácter para el puntero.
+    """
     global errores_Sinc_Desc
     if p:
-        # Calcular la columna del error
-        inicio_linea = p.lexer.lexdata.rfind('\n', 0, p.lexpos) + 1
-        columna = (p.lexpos - inicio_linea) + 1
-        msg = f"Error de sintaxis en '{p.value}' (línea {p.lineno}, columna {columna})"
+        # 1. Obtener el código fuente completo
+        codigo_fuente = p.lexer.lexdata
+        
+        # 2. Encontrar la línea del error, reemplazando tabs con UN solo espacio
+        lineas = codigo_fuente.splitlines()
+        linea_del_error = lineas[p.lineno - 1].replace('\t', ' ')
+
+        # 3. Calcular la columna tratando cada carácter como si ocupara 1 espacio
+        inicio_linea = codigo_fuente.rfind('\n', 0, p.lexpos) + 1
+        columna = p.lexpos - inicio_linea
+
+        # 4. Crear la cadena del puntero
+        puntero = ' ' * columna + '↑'
+
+        # 5. Construir el mensaje de error completo
+        msg = (
+            f"Error de Sintaxis en la línea {p.lineno}, columna {columna + 1}:\n"
+            f"  {linea_del_error}\n"
+            f"  {puntero}\n"
+            f"  > Token inesperado '{p.value}' (tipo {p.type}). Se esperaba una estructura diferente."
+        )
         errores_Sinc_Desc.append(msg)
     else:
-        errores_Sinc_Desc.append("Error de sintaxis: Fin de archivo inesperado (EOF)")
+        errores_Sinc_Desc.append("Error de sintaxis: Fin de archivo inesperado (EOF).")
 
 # Construir el analizador
 parser = yacc.yacc()

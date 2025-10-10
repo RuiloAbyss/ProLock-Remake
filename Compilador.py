@@ -40,8 +40,7 @@ class CompilerGUI:
         self.root.bind("<Control-minus>", self.zoom_out)
 
         # Numeración
-        self.line_numbers = tk.Text(frame, width=4, padx=5, takefocus=0, font=self.text_font,
-                                    bg="#f0f0f0", state=tk.DISABLED)
+        self.line_numbers = tk.Text(frame, width=4, padx=5, takefocus=0, font=self.text_font, bg="#f0f0f0", state=tk.DISABLED)
         self.line_numbers.pack(side=tk.LEFT, fill=tk.Y)
 
         # Área de texto
@@ -58,8 +57,12 @@ class CompilerGUI:
 
         # --- Consola ---
         tk.Label(self.root, text="Consola de Resultados", font=("Helvetica", 12, "bold")).pack(pady=(10, 0))
-        self.console_area = scrolledtext.ScrolledText(self.root, height=8, wrap=tk.WORD, state=tk.DISABLED)
+        self.console_area = scrolledtext.ScrolledText(self.root, height=8, wrap=tk.WORD, state=tk.DISABLED, font=("Consolas", 10))
         self.console_area.pack(pady=10, fill=tk.X)
+
+        # --- Definición de estilos (tags) para la consola ---
+        self.console_area.tag_config('error', foreground='red')
+        self.console_area.tag_config('success', foreground='green')
 
         # Inicializar numeración
         self.update_line_numbers()
@@ -136,7 +139,7 @@ class CompilerGUI:
 
         # Validar si hay código para analizar
         if not codigo.strip():
-            self.console_area.insert(tk.END, "[ERROR] El área de código está vacía.\n")
+            self.console_area.insert(tk.END, "El área de código está vacía.\n")
             self.console_area.config(state=tk.DISABLED)
             return
 
@@ -152,11 +155,11 @@ class CompilerGUI:
 
         # CONDICIÓN DE FALLO: Si hay errores léxicos O no se encontró ningún token
         if errores_lexicos or not self.tokens_identificados:
-            self.console_area.insert(tk.END, f"Análisis léxico fallido. Se encontraron problemas:\n")
+            self.console_area.insert(tk.END, f"Análisis léxico fallido. Se encontraron problemas:\n", 'error')
             
             # Caso especial: no hay tokens, pero tampoco errores (código vacío o con solo comentarios)
             if not self.tokens_identificados and not errores_lexicos:
-                self.console_area.insert(tk.END, " - Error: El código no contiene ningún token válido para analizar.\n")
+                self.console_area.insert(tk.END, " - Error: El código no contiene ningún token válido para analizar.\n", 'error')
             
             # Mostrar todos los errores léxicos encontrados
             for token in self.tokens_identificados:
@@ -167,9 +170,9 @@ class CompilerGUI:
                 if token_type == 'ERROR':
                     # ...construimos el mensaje de error detallado y lo insertamos en la consola.
                     error_msg = f" - Símbolo no reconocido '{token_value}' en línea {token_line}, columna {token_col}\n"
-                    self.console_area.insert(tk.END, error_msg)
+                    self.console_area.insert(tk.END, error_msg, 'error')
         else:
-            self.console_area.insert(tk.END, f" Análisis léxico completado. {len(self.tokens_identificados)} tokens encontrados.\n\n")
+            self.console_area.insert(tk.END, f" Análisis léxico completado. {len(self.tokens_identificados)} tokens encontrados.\n\n", 'success')
 
         # ==========================================================
         # FASE 2: ANÁLISIS SINTÁCTICO (Solo si la Fase 1 tuvo éxito)
@@ -189,9 +192,9 @@ class CompilerGUI:
         if errores_sintacticos:
             self.console_area.insert(tk.END, f"Análisis sintáctico fallido. Se encontraron problemas de estructura:\n")
             for error in errores_sintacticos:
-                self.console_area.insert(tk.END, f" - {error}\n")
+                self.console_area.insert(tk.END, f" - {error}\n", 'error')
         else:
-            self.console_area.insert(tk.END, "Análisis sintáctico completado. La estructura del programa es correcta.\n\n")
+            self.console_area.insert(tk.END, "Análisis sintáctico completado. La estructura del programa es correcta.\n\n", 'success')
             self.console_area.insert(tk.END, "¡Análisis completado con éxito!\n")
         
         self.console_area.config(state=tk.DISABLED)
@@ -235,9 +238,8 @@ class CompilerGUI:
                 tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col), tags=('error_token',))
             else:
                 tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col))
-        # ... (resto del código de ver_tokens sin cambios) ...
 
-# --- Código para correr la aplicación (sin cambios) ---
+# --- Código para correr la aplicación ---
 if __name__ == "__main__":
     root = tk.Tk()
     app = CompilerGUI(root)
