@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import font, filedialog, scrolledtext, ttk, messagebox
 import lexico as AL
@@ -17,8 +18,11 @@ class CompilerGUI:
         self.root.title("Compilador de ProLock")
         self.root.geometry("800x600")
         
+        self.current_filepath = None #guardar los nombres de los archivos para copiar su nombre en otras exportaciones
+
         # Fuente base
         self.text_font = font.Font(family="Consolas", size=12)
+        
 
         # --- Menú ---
         menu = tk.Menu(self.root)
@@ -122,7 +126,9 @@ class CompilerGUI:
 
     def abrir_archivo(self):
         archivo = filedialog.askopenfilename(defaultextension=".txt", filetypes=[("Archivos de texto", "*.txt")])
+        
         if archivo:
+            self.current_filepath = archivo
             with open(archivo, "r") as file:
                 codigo = file.read()
             self.text_area.delete("1.0", tk.END)
@@ -132,6 +138,7 @@ class CompilerGUI:
     def guardar_archivo(self):
         archivo = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Archivos de texto", "*.txt")])
         if archivo:
+            self.current_filepath = archivo
             with open(archivo, "w") as file:
                 file.write(self.text_area.get("1.0", tk.END))
     
@@ -250,50 +257,61 @@ class CompilerGUI:
 
     def ver_arbol(self):
         """
-        Genera y muestra el árbol de sintaxis abstracta.
+        Genera y muestra el árbol de sintaxis, guardando la imagen
+        en una subcarpeta llamada 'diagrams'.
         """
-        # Primero, verificar si las librerías necesarias están instaladas
         if not LIBRERIAS_GRAFICAS_OK:
             messagebox.showerror("Librerías Faltantes", 
                                 "Para ver el árbol, necesitas instalar 'graphviz' y 'pillow'.\n"
                                 "Ejecuta en la terminal: pip install graphviz pillow")
             return
 
-        # Obtener el código y realizar un análisis previo
         codigo = self.text_area.get("1.0", tk.END)
+        
+        # Análisis previo y obtención del árbol (sin cambios)
         AL.analisis(codigo)
-        AS.limpiar_errores_sintacticos()
-
-        # Parsear el código para obtener el árbol
+        AS.limpiar_errores_sintacticos() 
         syntax_tree = AS.parser.parse(codigo, lexer=AL.lexer)
-
-        # Verificar si hubo errores sintácticos que impidieran la creación del árbol
+        
         if not syntax_tree or AS.errores_Sinc_Desc:
             messagebox.showerror("Error de Sintaxis", 
-                                "No se puede generar el árbol porque el código tiene errores sintácticos.\n"
-                                "Por favor, corrige el código y vuelve a intentarlo.")
+                                "No se puede generar el árbol porque el código tiene errores.\n"
+                                "Usa 'Analizar Código' para ver los detalles.")
             return
 
         try:
-            # Generar el código Graphviz usando nuestra función adaptada
+            # Lógica para obtener el nombre base del archivo (sin cambios)
+            output_base_name = "arbol_sin_nombre"
+            if self.current_filepath:
+                base = os.path.basename(self.current_filepath)
+                output_base_name = os.path.splitext(base)[0]
+            elif isinstance(syntax_tree, tuple) and len(syntax_tree) > 1:
+                output_base_name = syntax_tree[1]
+
+            # 1. Definir el nombre de la subcarpeta y asegurarse de que exista.
+            diagram_dir = "diagrams"
+            os.makedirs(diagram_dir, exist_ok=True) # <-- Crea la carpeta si no existe
+
+            # 2. Construir la ruta completa del archivo, incluyendo la subcarpeta.
+            #    os.path.join es la forma correcta de unir rutas de carpetas y archivos.
+            output_filepath = os.path.join(diagram_dir, output_base_name)
+            output_image_filepath = f"{output_filepath}.png"
+            
             graphviz_code = DA.ply_tree_to_graphviz(syntax_tree)
-
-            # Crear la imagen y mostrarla
             graph = Source(graphviz_code)
-            graph.render('arbol_sintactico', format='png', cleanup=True)
-
-            image = Image.open('arbol_sintactico.png')
+            
+            # Renderizar y abrir usando la nueva ruta completa
+            graph.render(output_filepath, format='png', cleanup=True)
+            image = Image.open(output_image_filepath)
             image.show()
-
+            
             self.console_area.config(state=tk.NORMAL)
-            self.console_area.insert(tk.END, "[INFO] Árbol sintáctico generado y mostrado con éxito.\n")
+            self.console_area.insert(tk.END, f"[INFO] Árbol para '{output_base_name}' guardado en la carpeta '{diagram_dir}'.\n", 'info')
             self.console_area.config(state=tk.DISABLED)
 
         except Exception as e:
-            # Capturar posibles errores (ej. Graphviz no instalado en el sistema)
             messagebox.showerror("Error de Graphviz", 
-                                f"No se pudo renderizar el árbol. Asegúrate de que Graphviz esté instalado en tu sistema y añadido al PATH.\n\nError: {e}")
-
+                                f"No se pudo renderizar el árbol. ¿Instalaste Graphviz y lo añadiste al PATH?\n\nError: {e}")
 
 # --- Código para correr la aplicación ---
 if __name__ == "__main__":
