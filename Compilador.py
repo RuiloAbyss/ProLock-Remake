@@ -48,7 +48,7 @@ class CompilerGUI:
         self.text_area = tk.Text(frame, wrap=tk.NONE, font=self.text_font, undo=True,
                                  yscrollcommand=self.sync_scroll)
         self.text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
+        self.text_area.config(tabs=(self.text_font.measure(' ' * 3),)) #Tabs de 3 caracters
         self.scrollbar.config(command=self.scroll_both)
 
         # Eventos
@@ -176,6 +176,7 @@ class CompilerGUI:
         # ==========================================================
         self.console_area.insert(tk.END, "--- Iniciando Fase 2: Análisis Sintáctico ---\n")
         
+        AL.lexer.lineno = 1 # Reiniciamos el contador de lineas después de haber cumplido la fase léxica
         AS.limpiar_errores_sintacticos() # Limpiar errores de una ejecución previa
         
         # El parser de YACC reutiliza el lexer y su estado

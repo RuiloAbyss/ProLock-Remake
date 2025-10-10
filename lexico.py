@@ -76,7 +76,7 @@ def t_error(t):
     inicio_linea = t.lexer.lexdata.rfind('\n', 0, t.lexpos) + 1
     columna = 0
     posicion_actual = inicio_linea
-    tabsize = 4
+    tabsize = 3
     while posicion_actual < t.lexpos:
         if t.lexer.lexdata[posicion_actual] == '\t':
             columna += tabsize - (columna % tabsize)
