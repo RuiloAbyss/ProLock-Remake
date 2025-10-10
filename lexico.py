@@ -18,7 +18,7 @@ RESERVADA = {
 tokens = [
     'IDENTIFICADOR', 'APERTURA', 'CIERRE', 'NUMERO', 'LPAREN', 'RPAREN',
     'CADENA', 'COMENTARIO', 'OBJETO', 'opLOGICO', 'opARITMETICO', 
-    'IGUAL', 'COMA', 'PROG', 'ERROR'  # <-- Token de error añadido
+    'IGUAL', 'COMA', 'ERROR' 
 ] + list(RESERVADA.values())
 
 # Reglas de tokens simples (sin cambios)

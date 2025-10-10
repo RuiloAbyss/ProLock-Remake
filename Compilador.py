@@ -1,14 +1,22 @@
 import tkinter as tk
-from tkinter import font, filedialog, scrolledtext, ttk
+from tkinter import font, filedialog, scrolledtext, ttk, messagebox
 import lexico as AL
 import sintactico as AS
+import arbolSintaxis as DA
+
+try:
+    from graphviz import Source
+    from PIL import Image
+    LIBRERIAS_GRAFICAS_OK = True
+except ImportError:
+    LIBRERIAS_GRAFICAS_OK = False
 
 class CompilerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Compilador de ProLock")
         self.root.geometry("800x600")
-
+        
         # Fuente base
         self.text_font = font.Font(family="Consolas", size=12)
 
@@ -26,6 +34,7 @@ class CompilerGUI:
         file_menu.add_command(label="Salir", command=self.root.quit)
         tools_menu.add_command(label="Compilar", command=self.compilar)
         tools_menu.add_command(label="Ver Tokens", command=self.ver_tokens)
+        tools_menu.add_command(label="Ver Árbol Sintáctico", command=self.ver_arbol)
 
         # --- Frame principal ---
         frame = tk.Frame(self.root)
@@ -238,6 +247,53 @@ class CompilerGUI:
                 tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col), tags=('error_token',))
             else:
                 tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col))
+
+    def ver_arbol(self):
+        """
+        Genera y muestra el árbol de sintaxis abstracta.
+        """
+        # Primero, verificar si las librerías necesarias están instaladas
+        if not LIBRERIAS_GRAFICAS_OK:
+            messagebox.showerror("Librerías Faltantes", 
+                                "Para ver el árbol, necesitas instalar 'graphviz' y 'pillow'.\n"
+                                "Ejecuta en la terminal: pip install graphviz pillow")
+            return
+
+        # Obtener el código y realizar un análisis previo
+        codigo = self.text_area.get("1.0", tk.END)
+        AL.analisis(codigo)
+        AS.limpiar_errores_sintacticos()
+
+        # Parsear el código para obtener el árbol
+        syntax_tree = AS.parser.parse(codigo, lexer=AL.lexer)
+
+        # Verificar si hubo errores sintácticos que impidieran la creación del árbol
+        if not syntax_tree or AS.errores_Sinc_Desc:
+            messagebox.showerror("Error de Sintaxis", 
+                                "No se puede generar el árbol porque el código tiene errores sintácticos.\n"
+                                "Por favor, corrige el código y vuelve a intentarlo.")
+            return
+
+        try:
+            # Generar el código Graphviz usando nuestra función adaptada
+            graphviz_code = DA.ply_tree_to_graphviz(syntax_tree)
+
+            # Crear la imagen y mostrarla
+            graph = Source(graphviz_code)
+            graph.render('arbol_sintactico', format='png', cleanup=True)
+
+            image = Image.open('arbol_sintactico.png')
+            image.show()
+
+            self.console_area.config(state=tk.NORMAL)
+            self.console_area.insert(tk.END, "[INFO] Árbol sintáctico generado y mostrado con éxito.\n")
+            self.console_area.config(state=tk.DISABLED)
+
+        except Exception as e:
+            # Capturar posibles errores (ej. Graphviz no instalado en el sistema)
+            messagebox.showerror("Error de Graphviz", 
+                                f"No se pudo renderizar el árbol. Asegúrate de que Graphviz esté instalado en tu sistema y añadido al PATH.\n\nError: {e}")
+
 
 # --- Código para correr la aplicación ---
 if __name__ == "__main__":
