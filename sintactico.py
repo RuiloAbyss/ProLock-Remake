@@ -69,7 +69,8 @@ def p_tipo(p):
     '''tipo : BOOLEAN
             | STRING
             | TIME
-            | MOMENT'''
+            | MOMENT
+            | NUMBER'''
     p[0] = p[1]
 
 def p_valor(p):
@@ -77,6 +78,7 @@ def p_valor(p):
              | FALSE
              | CADENA
              | TIEMPO
+             | NUMERO 
              | CURRENT_TIME LPAREN RPAREN'''
     if len(p) == 2:
         p[0] = p[1]
@@ -128,7 +130,8 @@ def p_valor_literal(p):
     '''valor_literal : CADENA
                      | TRUE
                      | FALSE
-                     | TIEMPO'''
+                     | TIEMPO
+                     | NUMERO'''
     p[0] = p[1]
 
 def p_acceso_miembro(p):

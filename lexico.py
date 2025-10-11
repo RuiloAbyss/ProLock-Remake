@@ -9,7 +9,7 @@ lista_errores_lexicos = []
 RESERVADA = {
     'program': 'PROGRAM', 'lock': 'LOCK', 'clock': 'CLOCK', 'routine': 'ROUTINE',
     'state': 'STATE', 'action': 'ACTION', 'when': 'WHEN', 'boolean': 'BOOLEAN',
-    'string': 'STRING', 'time': 'TIME', 'moment': 'MOMENT', 'true': 'TRUE',
+    'string': 'STRING', 'time': 'TIME', 'moment': 'MOMENT', 'true': 'TRUE', 'number': 'NUMBER',
     'false': 'FALSE', 'show': 'SHOW', 'current_time': 'CURRENT_TIME', 'check': 'CHECK'
 }
 

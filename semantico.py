@@ -75,7 +75,16 @@ class SemanticAnalyzer:
         if col == -1: col = 0
         pointer = ' ' * col + '^' * len(clean_identifier)
         return {"message": message, "line": line_num, "content": line_content.strip(), "pointer": pointer}
-
+    
+    def _find_line_of_usage(self, identifier):
+        """Busca en el código fuente la línea donde se usa un identificador."""
+        clean_identifier = identifier.lstrip('$')
+        for i, line in enumerate(self.source_lines):
+            # Usamos una expresión regular para encontrar la palabra exacta
+            if re.search(r'\b' + re.escape(clean_identifier) + r'\b', line):
+                return i + 1
+        return 0 # Devuelve 0 si no se encuentra
+    
     def analyze(self):
         self.visit(self.ast, pass_num=1)
         if not self.errors:
@@ -187,14 +196,10 @@ class SemanticAnalyzer:
         for action in node[2]: self.get_expression_type(action, scope)
 
     def get_expression_type(self, node, scope):
-        # Esta función es larga, por favor, asegúrate de tener la versión completa
-        # de las respuestas anteriores que incluye todos los 'elif' para:
-        # binary_op, member_access, method_call, identifier, show_call, 
-        # member_assignment, assignment, action_call.
-        # (Se omite por brevedad, pero DEBE ESTAR COMPLETA en tu archivo)
         if not isinstance(node, (tuple, list)):
             if node == 'true' or node == 'false': return 'boolean'
             if isinstance(node, str) and node.startswith('<') and node.endswith('>'): return 'moment'
+            if isinstance(node, (int, float)): return 'number'
             if isinstance(node, str): return 'string'
             if isinstance(node, bool): return 'boolean'
             return 'unknown'
@@ -202,14 +207,16 @@ class SemanticAnalyzer:
         node_type = node[0]
         
         if node_type == 'binary_op':
-            op, left_node, right_node = node[1], node[2], node[3] 
+            op, left_node, right_node = node[1], node[2], node[3]
             left_type = self.get_expression_type(left_node, scope)
             right_type = self.get_expression_type(right_node, scope)
             if op == '==':
                 if left_type != 'error' and right_type != 'error' and not self._types_are_compatible(left_type, right_type):
                     err = f"No se puede comparar '{left_type}' con '{right_type}'."
-                    self.errors.append(self._format_diagnostic(str(left_node), 0, err))
+                    line_num = self._find_line_of_usage(right_node[1] if isinstance(right_node, tuple) else str(right_node))
+                    self.errors.append(self._format_diagnostic(right_node[1] if isinstance(right_node, tuple) else str(right_node), line_num, err))
                 return 'boolean'
+        
         elif node_type == 'member_access':
             base_node, member_name = node[1], node[2]
             base_type = self.get_expression_type(base_node, scope)
@@ -217,34 +224,42 @@ class SemanticAnalyzer:
             object_name = base_node[1]
             member_symbol = self.symbol_table.lookup_member(object_name, member_name)
             if not member_symbol:
-                err = f"El miembro '{member_name}' no existe en el objeto '{object_name}'."
-                self.errors.append(self._format_diagnostic(member_name, 0, err))
+                err = f"El miembro '{member_name.lstrip('$')}' no existe en el objeto '{object_name}'."
+                line_num = self._find_line_of_usage(member_name)
+                self.errors.append(self._format_diagnostic(member_name, line_num, err))
                 return 'error'
             return member_symbol.type
+            
         elif node_type == 'method_call':
             expression_node, method_name = node[1], node[2]
             var_type = self.get_expression_type(expression_node, scope)
             if method_name == 'check':
                 if var_type in ['routine', 'action']:
                     err = f"El método '.check()' no se puede aplicar a un tipo '{var_type}'."
-                    self.errors.append(self._format_diagnostic(method_name, 0, err))
+                    line_num = self._find_line_of_usage(method_name)
+                    self.errors.append(self._format_diagnostic(method_name, line_num, err))
                     return 'error'
                 return var_type
             else:
                 err = f"Método desconocido '{method_name}'."
-                self.errors.append(self._format_diagnostic(method_name, 0, err))
+                line_num = self._find_line_of_usage(method_name)
+                self.errors.append(self._format_diagnostic(method_name, line_num, err))
                 return 'error'
+        
         elif node_type == 'identifier':
             identifier_name = node[1]
             symbol = self.symbol_table.lookup(identifier_name, scope)
             if not symbol:
                 err = f"El objeto '{identifier_name}' no ha sido declarado."
-                self.errors.append(self._format_diagnostic(identifier_name, 0, err))
+                line_num = self._find_line_of_usage(identifier_name)
+                self.errors.append(self._format_diagnostic(identifier_name, line_num, err))
                 return 'error'
             return symbol.type
+        
         elif node_type == 'show_call':
             self.get_expression_type(node[1], scope)
             return 'void'
+        
         elif node_type == 'member_assignment':
             member_access_node, expression_node = node[1], node[2]
             member_type = self.get_expression_type(member_access_node, scope)
@@ -252,50 +267,50 @@ class SemanticAnalyzer:
             expr_type = self.get_expression_type(expression_node, scope)
             if expr_type != 'error' and not self._types_are_compatible(member_type, expr_type):
                 var_name = member_access_node[2]
-                err = f"No se puede asignar '{expr_type}' a la variable '{var_name}' de tipo '{member_type}'."
-                line_num = 0
-                for i, line in enumerate(self.source_lines):
-                    if re.search(r'\b' + re.escape(var_name) + r'\s*=', line):
-                         line_num = i + 1
-                         break
+                err = f"No se puede asignar '{expr_type}' a la variable '{var_name.lstrip('$')}' de tipo '{member_type}'."
+                line_num = self._find_line_of_usage(var_name)
                 self.errors.append(self._format_diagnostic(var_name, line_num, err))
                 return 'error'
-            obj_name, member_name = member_access_node[1][1], member_access_node[2].lstrip('$')
-            member_symbol = self.symbol_table.lookup_member(obj_name, member_name)
-            if member_symbol: member_symbol.used = True
             return 'member_assignment'
+
         elif node_type == 'assignment':
             var_name, expression_node = node[1], node[2]
             var_symbol = self.symbol_table.lookup(var_name, scope)
             if not var_symbol:
                 err = f"Intento de asignar a una variable no declarada: '{var_name}'."
-                self.errors.append(self._format_diagnostic(var_name, 0, err))
+                line_num = self._find_line_of_usage(var_name)
+                self.errors.append(self._format_diagnostic(var_name, line_num, err))
                 return 'error'
             expr_type = self.get_expression_type(expression_node, scope)
             if expr_type != 'error' and not self._types_are_compatible(var_symbol.type, expr_type):
                 err = f"No se puede asignar '{expr_type}' a la variable '{var_name}' de tipo '{var_symbol.type}'."
-                self.errors.append(self._format_diagnostic(var_name, 0, err))
+                line_num = self._find_line_of_usage(var_name)
+                self.errors.append(self._format_diagnostic(var_name, line_num, err))
                 return 'error'
-            var_symbol.used = True
             return 'assignment'
+
         elif node_type == 'action_call':
             object_name, action_name = node[1], node[2]
             obj_symbol = self.symbol_table.lookup(object_name, scope)
             if not obj_symbol:
                 err = f"El objeto '{object_name}' no ha sido declarado."
-                self.errors.append(self._format_diagnostic(object_name, 0, err))
+                line_num = self._find_line_of_usage(object_name)
+                self.errors.append(self._format_diagnostic(object_name, line_num, err))
                 return 'error'
             obj_type = obj_symbol.type
             if obj_type in self.predefined_actions:
                 if action_name not in self.predefined_actions[obj_type]:
                     err = f"La acción '{action_name}' no es válida para un objeto de tipo '{obj_type}'."
-                    self.errors.append(self._format_diagnostic(action_name, 0, err))
+                    line_num = self._find_line_of_usage(action_name)
+                    self.errors.append(self._format_diagnostic(action_name, line_num, err))
                     return 'error'
             else:
                 err = f"No se pueden ejecutar acciones en un objeto de tipo '{obj_type}'."
-                self.errors.append(self._format_diagnostic(object_name, 0, err))
+                line_num = self._find_line_of_usage(object_name)
+                self.errors.append(self._format_diagnostic(object_name, line_num, err))
                 return 'error'
             return 'action'
+        
         return 'unknown'
 
 def analisis_semantico(ast, source_code):
