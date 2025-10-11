@@ -51,16 +51,15 @@ Rule 41    valor_literal -> NUMERO
 Rule 42    acceso_miembro -> expresion PUNTO NATIVA
 Rule 43    acceso_miembro -> expresion PUNTO IDENTIFICADOR
 Rule 44    llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN
-Rule 45    llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
-Rule 46    consecuencia -> enunciado_accion
-Rule 47    consecuencia -> consecuencia COMA enunciado_accion
-Rule 48    enunciado_accion -> asignacion
-Rule 49    enunciado_accion -> llamada_accion
-Rule 50    enunciado_accion -> llamada_show
-Rule 51    asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion
-Rule 52    asignacion -> IDENTIFICADOR IGUAL expresion
-Rule 53    llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR
-Rule 54    llamada_show -> SHOW LPAREN expresion RPAREN
+Rule 45    consecuencia -> enunciado_accion
+Rule 46    consecuencia -> consecuencia COMA enunciado_accion
+Rule 47    enunciado_accion -> asignacion
+Rule 48    enunciado_accion -> llamada_accion
+Rule 49    enunciado_accion -> llamada_show
+Rule 50    asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion
+Rule 51    asignacion -> IDENTIFICADOR IGUAL expresion
+Rule 52    llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR
+Rule 53    llamada_show -> SHOW LPAREN expresion RPAREN
 
 Terminals, with rules where they appear
 
@@ -68,28 +67,28 @@ ACTION               : 29
 APERTURA_LLAVE       : 1 8 9 26 29
 BOOLEAN              : 15
 CADENA               : 22 37
-CHECK                : 44 45
+CHECK                : 44
 CIERRE_LLAVE         : 1 8 9 26 29
 CLOCK                : 9
-COMA                 : 47
+COMA                 : 46
 COMENTARIO           : 
 CURRENT_TIME         : 25
 DOS_PUNTOS           : 10 30
 FALSE                : 21 39
 FLECHA               : 30
-IDENTIFICADOR        : 1 8 9 13 26 29 36 43 51 51 52 53 53
-IGUAL                : 13 14 51 52
+IDENTIFICADOR        : 1 8 9 13 26 29 36 43 50 50 51 52 52
+IGUAL                : 13 14 50 51
 LOCK                 : 8
-LPAREN               : 8 9 25 30 44 45 45 54
+LPAREN               : 8 9 25 30 44 53
 MOMENT               : 18
 NATIVA               : 14 42
 NUMBER               : 19
 NUMERO               : 24 41
 PROGRAM              : 1
-PUNTO                : 42 43 44 45 51 53
+PUNTO                : 42 43 44 50 52
 ROUTINE              : 26
-RPAREN               : 8 9 25 30 44 45 45 54
-SHOW                 : 54
+RPAREN               : 8 9 25 30 44 53
+SHOW                 : 53
 STATE                : 10
 STRING               : 16
 TIEMPO               : 23 40
@@ -102,26 +101,26 @@ opLOGICO             : 31
 Nonterminals, with rules where they appear
 
 acceso_miembro       : 33
-asignacion           : 48
+asignacion           : 47
 bloque_acciones      : 26 27
 bloque_definiciones  : 1 2
 bloque_estado        : 8 9
 clausula_when        : 29
 condicion            : 30
-consecuencia         : 30 47
+consecuencia         : 30 46
 declaracion_variable : 7 11 12
 def_action           : 27 28
 def_clock            : 5
 def_lock             : 4
 def_routine          : 6
 definicion           : 2 3
-enunciado_accion     : 46 47
-expresion            : 31 31 42 43 44 45 51 52 54
+enunciado_accion     : 45 46
+expresion            : 31 31 42 43 44 50 51 53
 identificador_simple : 34
 lista_variables      : 10 11
-llamada_accion       : 49
+llamada_accion       : 48
 llamada_metodo       : 32
-llamada_show         : 50
+llamada_show         : 49
 programa             : 0
 tipo                 : 13
 valor                : 13 14
@@ -902,7 +901,6 @@ state 66
     (34) expresion -> . identificador_simple
     (35) expresion -> . valor_literal
     (44) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
-    (45) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
     (42) acceso_miembro -> . expresion PUNTO NATIVA
     (43) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
     (36) identificador_simple -> . IDENTIFICADOR
@@ -912,72 +910,39 @@ state 66
     (40) valor_literal -> . TIEMPO
     (41) valor_literal -> . NUMERO
 
-    LPAREN          shift and go to state 67
-    IDENTIFICADOR   shift and go to state 74
-    CADENA          shift and go to state 75
-    TRUE            shift and go to state 76
-    FALSE           shift and go to state 77
-    TIEMPO          shift and go to state 78
-    NUMERO          shift and go to state 79
+    IDENTIFICADOR   shift and go to state 73
+    CADENA          shift and go to state 74
+    TRUE            shift and go to state 75
+    FALSE           shift and go to state 76
+    TIEMPO          shift and go to state 77
+    NUMERO          shift and go to state 78
 
-    condicion                      shift and go to state 68
-    expresion                      shift and go to state 69
-    llamada_metodo                 shift and go to state 70
-    acceso_miembro                 shift and go to state 71
-    identificador_simple           shift and go to state 72
-    valor_literal                  shift and go to state 73
+    condicion                      shift and go to state 67
+    expresion                      shift and go to state 68
+    llamada_metodo                 shift and go to state 69
+    acceso_miembro                 shift and go to state 70
+    identificador_simple           shift and go to state 71
+    valor_literal                  shift and go to state 72
 
 state 67
 
-    (45) llamada_metodo -> LPAREN . expresion RPAREN PUNTO CHECK LPAREN RPAREN
-    (32) expresion -> . llamada_metodo
-    (33) expresion -> . acceso_miembro
-    (34) expresion -> . identificador_simple
-    (35) expresion -> . valor_literal
-    (44) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
-    (45) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
-    (42) acceso_miembro -> . expresion PUNTO NATIVA
-    (43) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
-    (36) identificador_simple -> . IDENTIFICADOR
-    (37) valor_literal -> . CADENA
-    (38) valor_literal -> . TRUE
-    (39) valor_literal -> . FALSE
-    (40) valor_literal -> . TIEMPO
-    (41) valor_literal -> . NUMERO
-
-    LPAREN          shift and go to state 67
-    IDENTIFICADOR   shift and go to state 74
-    CADENA          shift and go to state 75
-    TRUE            shift and go to state 76
-    FALSE           shift and go to state 77
-    TIEMPO          shift and go to state 78
-    NUMERO          shift and go to state 79
-
-    expresion                      shift and go to state 80
-    llamada_metodo                 shift and go to state 70
-    acceso_miembro                 shift and go to state 71
-    identificador_simple           shift and go to state 72
-    valor_literal                  shift and go to state 73
-
-state 68
-
     (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion . RPAREN FLECHA consecuencia
 
-    RPAREN          shift and go to state 81
+    RPAREN          shift and go to state 79
 
 
-state 69
+state 68
 
     (31) condicion -> expresion . opLOGICO expresion
     (44) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
     (42) acceso_miembro -> expresion . PUNTO NATIVA
     (43) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
 
-    opLOGICO        shift and go to state 82
-    PUNTO           shift and go to state 83
+    opLOGICO        shift and go to state 80
+    PUNTO           shift and go to state 81
 
 
-state 70
+state 69
 
     (32) expresion -> llamada_metodo .
 
@@ -988,7 +953,7 @@ state 70
     CIERRE_LLAVE    reduce using rule 32 (expresion -> llamada_metodo .)
 
 
-state 71
+state 70
 
     (33) expresion -> acceso_miembro .
 
@@ -999,7 +964,7 @@ state 71
     CIERRE_LLAVE    reduce using rule 33 (expresion -> acceso_miembro .)
 
 
-state 72
+state 71
 
     (34) expresion -> identificador_simple .
 
@@ -1010,7 +975,7 @@ state 72
     CIERRE_LLAVE    reduce using rule 34 (expresion -> identificador_simple .)
 
 
-state 73
+state 72
 
     (35) expresion -> valor_literal .
 
@@ -1021,7 +986,7 @@ state 73
     CIERRE_LLAVE    reduce using rule 35 (expresion -> valor_literal .)
 
 
-state 74
+state 73
 
     (36) identificador_simple -> IDENTIFICADOR .
 
@@ -1032,7 +997,7 @@ state 74
     CIERRE_LLAVE    reduce using rule 36 (identificador_simple -> IDENTIFICADOR .)
 
 
-state 75
+state 74
 
     (37) valor_literal -> CADENA .
 
@@ -1043,7 +1008,7 @@ state 75
     CIERRE_LLAVE    reduce using rule 37 (valor_literal -> CADENA .)
 
 
-state 76
+state 75
 
     (38) valor_literal -> TRUE .
 
@@ -1054,7 +1019,7 @@ state 76
     CIERRE_LLAVE    reduce using rule 38 (valor_literal -> TRUE .)
 
 
-state 77
+state 76
 
     (39) valor_literal -> FALSE .
 
@@ -1065,7 +1030,7 @@ state 77
     CIERRE_LLAVE    reduce using rule 39 (valor_literal -> FALSE .)
 
 
-state 78
+state 77
 
     (40) valor_literal -> TIEMPO .
 
@@ -1076,7 +1041,7 @@ state 78
     CIERRE_LLAVE    reduce using rule 40 (valor_literal -> TIEMPO .)
 
 
-state 79
+state 78
 
     (41) valor_literal -> NUMERO .
 
@@ -1087,25 +1052,14 @@ state 79
     CIERRE_LLAVE    reduce using rule 41 (valor_literal -> NUMERO .)
 
 
-state 80
-
-    (45) llamada_metodo -> LPAREN expresion . RPAREN PUNTO CHECK LPAREN RPAREN
-    (44) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
-    (42) acceso_miembro -> expresion . PUNTO NATIVA
-    (43) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
-
-    RPAREN          shift and go to state 84
-    PUNTO           shift and go to state 83
-
-
-state 81
+state 79
 
     (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN . FLECHA consecuencia
 
-    FLECHA          shift and go to state 85
+    FLECHA          shift and go to state 82
 
 
-state 82
+state 80
 
     (31) condicion -> expresion opLOGICO . expresion
     (32) expresion -> . llamada_metodo
@@ -1113,7 +1067,6 @@ state 82
     (34) expresion -> . identificador_simple
     (35) expresion -> . valor_literal
     (44) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
-    (45) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
     (42) acceso_miembro -> . expresion PUNTO NATIVA
     (43) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
     (36) identificador_simple -> . IDENTIFICADOR
@@ -1123,61 +1076,53 @@ state 82
     (40) valor_literal -> . TIEMPO
     (41) valor_literal -> . NUMERO
 
-    LPAREN          shift and go to state 67
-    IDENTIFICADOR   shift and go to state 74
-    CADENA          shift and go to state 75
-    TRUE            shift and go to state 76
-    FALSE           shift and go to state 77
-    TIEMPO          shift and go to state 78
-    NUMERO          shift and go to state 79
+    IDENTIFICADOR   shift and go to state 73
+    CADENA          shift and go to state 74
+    TRUE            shift and go to state 75
+    FALSE           shift and go to state 76
+    TIEMPO          shift and go to state 77
+    NUMERO          shift and go to state 78
 
-    expresion                      shift and go to state 86
-    llamada_metodo                 shift and go to state 70
-    acceso_miembro                 shift and go to state 71
-    identificador_simple           shift and go to state 72
-    valor_literal                  shift and go to state 73
+    expresion                      shift and go to state 83
+    llamada_metodo                 shift and go to state 69
+    acceso_miembro                 shift and go to state 70
+    identificador_simple           shift and go to state 71
+    valor_literal                  shift and go to state 72
 
-state 83
+state 81
 
     (44) llamada_metodo -> expresion PUNTO . CHECK LPAREN RPAREN
     (42) acceso_miembro -> expresion PUNTO . NATIVA
     (43) acceso_miembro -> expresion PUNTO . IDENTIFICADOR
 
-    CHECK           shift and go to state 87
-    NATIVA          shift and go to state 88
-    IDENTIFICADOR   shift and go to state 89
+    CHECK           shift and go to state 84
+    NATIVA          shift and go to state 85
+    IDENTIFICADOR   shift and go to state 86
 
 
-state 84
-
-    (45) llamada_metodo -> LPAREN expresion RPAREN . PUNTO CHECK LPAREN RPAREN
-
-    PUNTO           shift and go to state 90
-
-
-state 85
+state 82
 
     (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA . consecuencia
-    (46) consecuencia -> . enunciado_accion
-    (47) consecuencia -> . consecuencia COMA enunciado_accion
-    (48) enunciado_accion -> . asignacion
-    (49) enunciado_accion -> . llamada_accion
-    (50) enunciado_accion -> . llamada_show
-    (51) asignacion -> . IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion
-    (52) asignacion -> . IDENTIFICADOR IGUAL expresion
-    (53) llamada_accion -> . IDENTIFICADOR PUNTO IDENTIFICADOR
-    (54) llamada_show -> . SHOW LPAREN expresion RPAREN
+    (45) consecuencia -> . enunciado_accion
+    (46) consecuencia -> . consecuencia COMA enunciado_accion
+    (47) enunciado_accion -> . asignacion
+    (48) enunciado_accion -> . llamada_accion
+    (49) enunciado_accion -> . llamada_show
+    (50) asignacion -> . IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion
+    (51) asignacion -> . IDENTIFICADOR IGUAL expresion
+    (52) llamada_accion -> . IDENTIFICADOR PUNTO IDENTIFICADOR
+    (53) llamada_show -> . SHOW LPAREN expresion RPAREN
 
-    IDENTIFICADOR   shift and go to state 96
-    SHOW            shift and go to state 97
+    IDENTIFICADOR   shift and go to state 92
+    SHOW            shift and go to state 93
 
-    consecuencia                   shift and go to state 91
-    enunciado_accion               shift and go to state 92
-    asignacion                     shift and go to state 93
-    llamada_accion                 shift and go to state 94
-    llamada_show                   shift and go to state 95
+    consecuencia                   shift and go to state 87
+    enunciado_accion               shift and go to state 88
+    asignacion                     shift and go to state 89
+    llamada_accion                 shift and go to state 90
+    llamada_show                   shift and go to state 91
 
-state 86
+state 83
 
     (31) condicion -> expresion opLOGICO expresion .
     (44) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
@@ -1185,17 +1130,17 @@ state 86
     (43) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
 
     RPAREN          reduce using rule 31 (condicion -> expresion opLOGICO expresion .)
-    PUNTO           shift and go to state 83
+    PUNTO           shift and go to state 81
 
 
-state 87
+state 84
 
     (44) llamada_metodo -> expresion PUNTO CHECK . LPAREN RPAREN
 
-    LPAREN          shift and go to state 98
+    LPAREN          shift and go to state 94
 
 
-state 88
+state 85
 
     (42) acceso_miembro -> expresion PUNTO NATIVA .
 
@@ -1206,7 +1151,7 @@ state 88
     CIERRE_LLAVE    reduce using rule 42 (acceso_miembro -> expresion PUNTO NATIVA .)
 
 
-state 89
+state 86
 
     (43) acceso_miembro -> expresion PUNTO IDENTIFICADOR .
 
@@ -1217,177 +1162,159 @@ state 89
     CIERRE_LLAVE    reduce using rule 43 (acceso_miembro -> expresion PUNTO IDENTIFICADOR .)
 
 
+state 87
+
+    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .
+    (46) consecuencia -> consecuencia . COMA enunciado_accion
+
+    CIERRE_LLAVE    reduce using rule 30 (clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .)
+    COMA            shift and go to state 95
+
+
+state 88
+
+    (45) consecuencia -> enunciado_accion .
+
+    COMA            reduce using rule 45 (consecuencia -> enunciado_accion .)
+    CIERRE_LLAVE    reduce using rule 45 (consecuencia -> enunciado_accion .)
+
+
+state 89
+
+    (47) enunciado_accion -> asignacion .
+
+    COMA            reduce using rule 47 (enunciado_accion -> asignacion .)
+    CIERRE_LLAVE    reduce using rule 47 (enunciado_accion -> asignacion .)
+
+
 state 90
 
-    (45) llamada_metodo -> LPAREN expresion RPAREN PUNTO . CHECK LPAREN RPAREN
+    (48) enunciado_accion -> llamada_accion .
 
-    CHECK           shift and go to state 99
+    COMA            reduce using rule 48 (enunciado_accion -> llamada_accion .)
+    CIERRE_LLAVE    reduce using rule 48 (enunciado_accion -> llamada_accion .)
 
 
 state 91
 
-    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .
-    (47) consecuencia -> consecuencia . COMA enunciado_accion
+    (49) enunciado_accion -> llamada_show .
 
-    CIERRE_LLAVE    reduce using rule 30 (clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .)
-    COMA            shift and go to state 100
+    COMA            reduce using rule 49 (enunciado_accion -> llamada_show .)
+    CIERRE_LLAVE    reduce using rule 49 (enunciado_accion -> llamada_show .)
 
 
 state 92
 
-    (46) consecuencia -> enunciado_accion .
+    (50) asignacion -> IDENTIFICADOR . PUNTO IDENTIFICADOR IGUAL expresion
+    (51) asignacion -> IDENTIFICADOR . IGUAL expresion
+    (52) llamada_accion -> IDENTIFICADOR . PUNTO IDENTIFICADOR
 
-    COMA            reduce using rule 46 (consecuencia -> enunciado_accion .)
-    CIERRE_LLAVE    reduce using rule 46 (consecuencia -> enunciado_accion .)
+    PUNTO           shift and go to state 96
+    IGUAL           shift and go to state 97
 
 
 state 93
 
-    (48) enunciado_accion -> asignacion .
+    (53) llamada_show -> SHOW . LPAREN expresion RPAREN
 
-    COMA            reduce using rule 48 (enunciado_accion -> asignacion .)
-    CIERRE_LLAVE    reduce using rule 48 (enunciado_accion -> asignacion .)
+    LPAREN          shift and go to state 98
 
 
 state 94
 
-    (49) enunciado_accion -> llamada_accion .
+    (44) llamada_metodo -> expresion PUNTO CHECK LPAREN . RPAREN
 
-    COMA            reduce using rule 49 (enunciado_accion -> llamada_accion .)
-    CIERRE_LLAVE    reduce using rule 49 (enunciado_accion -> llamada_accion .)
+    RPAREN          shift and go to state 99
 
 
 state 95
 
-    (50) enunciado_accion -> llamada_show .
+    (46) consecuencia -> consecuencia COMA . enunciado_accion
+    (47) enunciado_accion -> . asignacion
+    (48) enunciado_accion -> . llamada_accion
+    (49) enunciado_accion -> . llamada_show
+    (50) asignacion -> . IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion
+    (51) asignacion -> . IDENTIFICADOR IGUAL expresion
+    (52) llamada_accion -> . IDENTIFICADOR PUNTO IDENTIFICADOR
+    (53) llamada_show -> . SHOW LPAREN expresion RPAREN
 
-    COMA            reduce using rule 50 (enunciado_accion -> llamada_show .)
-    CIERRE_LLAVE    reduce using rule 50 (enunciado_accion -> llamada_show .)
+    IDENTIFICADOR   shift and go to state 92
+    SHOW            shift and go to state 93
 
+    enunciado_accion               shift and go to state 100
+    asignacion                     shift and go to state 89
+    llamada_accion                 shift and go to state 90
+    llamada_show                   shift and go to state 91
 
 state 96
 
-    (51) asignacion -> IDENTIFICADOR . PUNTO IDENTIFICADOR IGUAL expresion
-    (52) asignacion -> IDENTIFICADOR . IGUAL expresion
-    (53) llamada_accion -> IDENTIFICADOR . PUNTO IDENTIFICADOR
+    (50) asignacion -> IDENTIFICADOR PUNTO . IDENTIFICADOR IGUAL expresion
+    (52) llamada_accion -> IDENTIFICADOR PUNTO . IDENTIFICADOR
 
-    PUNTO           shift and go to state 101
-    IGUAL           shift and go to state 102
+    IDENTIFICADOR   shift and go to state 101
 
 
 state 97
 
-    (54) llamada_show -> SHOW . LPAREN expresion RPAREN
+    (51) asignacion -> IDENTIFICADOR IGUAL . expresion
+    (32) expresion -> . llamada_metodo
+    (33) expresion -> . acceso_miembro
+    (34) expresion -> . identificador_simple
+    (35) expresion -> . valor_literal
+    (44) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
+    (42) acceso_miembro -> . expresion PUNTO NATIVA
+    (43) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
+    (36) identificador_simple -> . IDENTIFICADOR
+    (37) valor_literal -> . CADENA
+    (38) valor_literal -> . TRUE
+    (39) valor_literal -> . FALSE
+    (40) valor_literal -> . TIEMPO
+    (41) valor_literal -> . NUMERO
 
-    LPAREN          shift and go to state 103
+    IDENTIFICADOR   shift and go to state 73
+    CADENA          shift and go to state 74
+    TRUE            shift and go to state 75
+    FALSE           shift and go to state 76
+    TIEMPO          shift and go to state 77
+    NUMERO          shift and go to state 78
 
+    expresion                      shift and go to state 102
+    llamada_metodo                 shift and go to state 69
+    acceso_miembro                 shift and go to state 70
+    identificador_simple           shift and go to state 71
+    valor_literal                  shift and go to state 72
 
 state 98
 
-    (44) llamada_metodo -> expresion PUNTO CHECK LPAREN . RPAREN
+    (53) llamada_show -> SHOW LPAREN . expresion RPAREN
+    (32) expresion -> . llamada_metodo
+    (33) expresion -> . acceso_miembro
+    (34) expresion -> . identificador_simple
+    (35) expresion -> . valor_literal
+    (44) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
+    (42) acceso_miembro -> . expresion PUNTO NATIVA
+    (43) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
+    (36) identificador_simple -> . IDENTIFICADOR
+    (37) valor_literal -> . CADENA
+    (38) valor_literal -> . TRUE
+    (39) valor_literal -> . FALSE
+    (40) valor_literal -> . TIEMPO
+    (41) valor_literal -> . NUMERO
 
-    RPAREN          shift and go to state 104
+    IDENTIFICADOR   shift and go to state 73
+    CADENA          shift and go to state 74
+    TRUE            shift and go to state 75
+    FALSE           shift and go to state 76
+    TIEMPO          shift and go to state 77
+    NUMERO          shift and go to state 78
 
+    expresion                      shift and go to state 103
+    llamada_metodo                 shift and go to state 69
+    acceso_miembro                 shift and go to state 70
+    identificador_simple           shift and go to state 71
+    valor_literal                  shift and go to state 72
 
 state 99
-
-    (45) llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK . LPAREN RPAREN
-
-    LPAREN          shift and go to state 105
-
-
-state 100
-
-    (47) consecuencia -> consecuencia COMA . enunciado_accion
-    (48) enunciado_accion -> . asignacion
-    (49) enunciado_accion -> . llamada_accion
-    (50) enunciado_accion -> . llamada_show
-    (51) asignacion -> . IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion
-    (52) asignacion -> . IDENTIFICADOR IGUAL expresion
-    (53) llamada_accion -> . IDENTIFICADOR PUNTO IDENTIFICADOR
-    (54) llamada_show -> . SHOW LPAREN expresion RPAREN
-
-    IDENTIFICADOR   shift and go to state 96
-    SHOW            shift and go to state 97
-
-    enunciado_accion               shift and go to state 106
-    asignacion                     shift and go to state 93
-    llamada_accion                 shift and go to state 94
-    llamada_show                   shift and go to state 95
-
-state 101
-
-    (51) asignacion -> IDENTIFICADOR PUNTO . IDENTIFICADOR IGUAL expresion
-    (53) llamada_accion -> IDENTIFICADOR PUNTO . IDENTIFICADOR
-
-    IDENTIFICADOR   shift and go to state 107
-
-
-state 102
-
-    (52) asignacion -> IDENTIFICADOR IGUAL . expresion
-    (32) expresion -> . llamada_metodo
-    (33) expresion -> . acceso_miembro
-    (34) expresion -> . identificador_simple
-    (35) expresion -> . valor_literal
-    (44) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
-    (45) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
-    (42) acceso_miembro -> . expresion PUNTO NATIVA
-    (43) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
-    (36) identificador_simple -> . IDENTIFICADOR
-    (37) valor_literal -> . CADENA
-    (38) valor_literal -> . TRUE
-    (39) valor_literal -> . FALSE
-    (40) valor_literal -> . TIEMPO
-    (41) valor_literal -> . NUMERO
-
-    LPAREN          shift and go to state 67
-    IDENTIFICADOR   shift and go to state 74
-    CADENA          shift and go to state 75
-    TRUE            shift and go to state 76
-    FALSE           shift and go to state 77
-    TIEMPO          shift and go to state 78
-    NUMERO          shift and go to state 79
-
-    expresion                      shift and go to state 108
-    llamada_metodo                 shift and go to state 70
-    acceso_miembro                 shift and go to state 71
-    identificador_simple           shift and go to state 72
-    valor_literal                  shift and go to state 73
-
-state 103
-
-    (54) llamada_show -> SHOW LPAREN . expresion RPAREN
-    (32) expresion -> . llamada_metodo
-    (33) expresion -> . acceso_miembro
-    (34) expresion -> . identificador_simple
-    (35) expresion -> . valor_literal
-    (44) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
-    (45) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
-    (42) acceso_miembro -> . expresion PUNTO NATIVA
-    (43) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
-    (36) identificador_simple -> . IDENTIFICADOR
-    (37) valor_literal -> . CADENA
-    (38) valor_literal -> . TRUE
-    (39) valor_literal -> . FALSE
-    (40) valor_literal -> . TIEMPO
-    (41) valor_literal -> . NUMERO
-
-    LPAREN          shift and go to state 67
-    IDENTIFICADOR   shift and go to state 74
-    CADENA          shift and go to state 75
-    TRUE            shift and go to state 76
-    FALSE           shift and go to state 77
-    TIEMPO          shift and go to state 78
-    NUMERO          shift and go to state 79
-
-    expresion                      shift and go to state 109
-    llamada_metodo                 shift and go to state 70
-    acceso_miembro                 shift and go to state 71
-    identificador_simple           shift and go to state 72
-    valor_literal                  shift and go to state 73
-
-state 104
 
     (44) llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN .
 
@@ -1398,74 +1325,55 @@ state 104
     CIERRE_LLAVE    reduce using rule 44 (llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN .)
 
 
-state 105
+state 100
 
-    (45) llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN . RPAREN
+    (46) consecuencia -> consecuencia COMA enunciado_accion .
 
-    RPAREN          shift and go to state 110
-
-
-state 106
-
-    (47) consecuencia -> consecuencia COMA enunciado_accion .
-
-    COMA            reduce using rule 47 (consecuencia -> consecuencia COMA enunciado_accion .)
-    CIERRE_LLAVE    reduce using rule 47 (consecuencia -> consecuencia COMA enunciado_accion .)
+    COMA            reduce using rule 46 (consecuencia -> consecuencia COMA enunciado_accion .)
+    CIERRE_LLAVE    reduce using rule 46 (consecuencia -> consecuencia COMA enunciado_accion .)
 
 
-state 107
+state 101
 
-    (51) asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR . IGUAL expresion
-    (53) llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR .
+    (50) asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR . IGUAL expresion
+    (52) llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR .
 
-    IGUAL           shift and go to state 111
-    COMA            reduce using rule 53 (llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
-    CIERRE_LLAVE    reduce using rule 53 (llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
+    IGUAL           shift and go to state 104
+    COMA            reduce using rule 52 (llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
+    CIERRE_LLAVE    reduce using rule 52 (llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
 
 
-state 108
+state 102
 
-    (52) asignacion -> IDENTIFICADOR IGUAL expresion .
+    (51) asignacion -> IDENTIFICADOR IGUAL expresion .
     (44) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
     (42) acceso_miembro -> expresion . PUNTO NATIVA
     (43) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
 
-    COMA            reduce using rule 52 (asignacion -> IDENTIFICADOR IGUAL expresion .)
-    CIERRE_LLAVE    reduce using rule 52 (asignacion -> IDENTIFICADOR IGUAL expresion .)
-    PUNTO           shift and go to state 83
+    COMA            reduce using rule 51 (asignacion -> IDENTIFICADOR IGUAL expresion .)
+    CIERRE_LLAVE    reduce using rule 51 (asignacion -> IDENTIFICADOR IGUAL expresion .)
+    PUNTO           shift and go to state 81
 
 
-state 109
+state 103
 
-    (54) llamada_show -> SHOW LPAREN expresion . RPAREN
+    (53) llamada_show -> SHOW LPAREN expresion . RPAREN
     (44) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
     (42) acceso_miembro -> expresion . PUNTO NATIVA
     (43) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
 
-    RPAREN          shift and go to state 112
-    PUNTO           shift and go to state 83
+    RPAREN          shift and go to state 105
+    PUNTO           shift and go to state 81
 
 
-state 110
+state 104
 
-    (45) llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .
-
-    opLOGICO        reduce using rule 45 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
-    PUNTO           reduce using rule 45 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
-    RPAREN          reduce using rule 45 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
-    COMA            reduce using rule 45 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
-    CIERRE_LLAVE    reduce using rule 45 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
-
-
-state 111
-
-    (51) asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL . expresion
+    (50) asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL . expresion
     (32) expresion -> . llamada_metodo
     (33) expresion -> . acceso_miembro
     (34) expresion -> . identificador_simple
     (35) expresion -> . valor_literal
     (44) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
-    (45) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
     (42) acceso_miembro -> . expresion PUNTO NATIVA
     (43) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
     (36) identificador_simple -> . IDENTIFICADOR
@@ -1475,36 +1383,35 @@ state 111
     (40) valor_literal -> . TIEMPO
     (41) valor_literal -> . NUMERO
 
-    LPAREN          shift and go to state 67
-    IDENTIFICADOR   shift and go to state 74
-    CADENA          shift and go to state 75
-    TRUE            shift and go to state 76
-    FALSE           shift and go to state 77
-    TIEMPO          shift and go to state 78
-    NUMERO          shift and go to state 79
+    IDENTIFICADOR   shift and go to state 73
+    CADENA          shift and go to state 74
+    TRUE            shift and go to state 75
+    FALSE           shift and go to state 76
+    TIEMPO          shift and go to state 77
+    NUMERO          shift and go to state 78
 
-    expresion                      shift and go to state 113
-    llamada_metodo                 shift and go to state 70
-    acceso_miembro                 shift and go to state 71
-    identificador_simple           shift and go to state 72
-    valor_literal                  shift and go to state 73
+    expresion                      shift and go to state 106
+    llamada_metodo                 shift and go to state 69
+    acceso_miembro                 shift and go to state 70
+    identificador_simple           shift and go to state 71
+    valor_literal                  shift and go to state 72
 
-state 112
+state 105
 
-    (54) llamada_show -> SHOW LPAREN expresion RPAREN .
+    (53) llamada_show -> SHOW LPAREN expresion RPAREN .
 
-    COMA            reduce using rule 54 (llamada_show -> SHOW LPAREN expresion RPAREN .)
-    CIERRE_LLAVE    reduce using rule 54 (llamada_show -> SHOW LPAREN expresion RPAREN .)
+    COMA            reduce using rule 53 (llamada_show -> SHOW LPAREN expresion RPAREN .)
+    CIERRE_LLAVE    reduce using rule 53 (llamada_show -> SHOW LPAREN expresion RPAREN .)
 
 
-state 113
+state 106
 
-    (51) asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion .
+    (50) asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion .
     (44) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
     (42) acceso_miembro -> expresion . PUNTO NATIVA
     (43) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
 
-    COMA            reduce using rule 51 (asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion .)
-    CIERRE_LLAVE    reduce using rule 51 (asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion .)
-    PUNTO           shift and go to state 83
+    COMA            reduce using rule 50 (asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion .)
+    CIERRE_LLAVE    reduce using rule 50 (asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion .)
+    PUNTO           shift and go to state 81
 

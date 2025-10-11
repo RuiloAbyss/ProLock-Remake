@@ -107,13 +107,14 @@ def p_clausula_when(p):
     'clausula_when : WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia'
     p[0] = ('when_clause', p[4], p[7])
 
-# ==========================================================
-# REGLAS DE EXPRESIÓN (LÓGICA CORREGIDA Y UNIFICADA)
-# ==========================================================
+# =============================================================
+# REGLAS DE EXPRESIÓN (AHORA CON NÚMEROS DE LÍNEA PARA DEPURAR)
+# =============================================================
 
 def p_condicion(p):
     'condicion : expresion opLOGICO expresion'
-    p[0] = ('binary_op', p[2], p[1], p[3])
+    # Guardamos la línea del operador '==' como la referencia
+    p[0] = ('binary_op', p[2], p[1], p[3], p.lineno(2))
 
 def p_expresion(p):
     '''expresion : llamada_metodo
@@ -124,7 +125,7 @@ def p_expresion(p):
 
 def p_identificador_simple(p):
     'identificador_simple : IDENTIFICADOR'
-    p[0] = ('identifier', p[1])
+    p[0] = ('identifier', p[1], p.lineno(1))
 
 def p_valor_literal(p):
     '''valor_literal : CADENA
@@ -132,20 +133,19 @@ def p_valor_literal(p):
                      | FALSE
                      | TIEMPO
                      | NUMERO'''
+    # Para literales, el p[0] es solo el valor, no una tupla, así que no añadimos línea.
     p[0] = p[1]
 
 def p_acceso_miembro(p):
     '''acceso_miembro : expresion PUNTO NATIVA
                       | expresion PUNTO IDENTIFICADOR'''
-    p[0] = ('member_access', p[1], f'${p[3]}' if p.slice[2].type == 'NATIVA' else p[3])
+    # La línea de referencia es la del objeto base
+    p[0] = ('member_access', p[1], f'${p[3]}' if p.slice[3].type == 'NATIVA' else p[3], p[1][-1])
 
 def p_llamada_metodo(p):
-    '''llamada_metodo : expresion PUNTO CHECK LPAREN RPAREN
-                      | LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN'''
-    if len(p) == 6:
-        p[0] = ('method_call', p[1], p[3])
-    else:
-        p[0] = ('method_call', p[2], p[5])
+    '''llamada_metodo : expresion PUNTO CHECK LPAREN RPAREN'''
+    # La línea de referencia es la del '.check'
+    p[0] = ('method_call', p[1], p[3], p.lineno(3))
     
 def p_consecuencia(p):
     '''consecuencia : enunciado_accion
@@ -166,21 +166,19 @@ def p_asignacion(p):
                   | IDENTIFICADOR IGUAL expresion'''
     if len(p) == 6:
         # Asignación a miembro: front_door.is_locked = true
-        member_access_node = ('member_access', ('identifier', p[1]), p[3])
-        p[0] = ('member_assignment', member_access_node, p[5])
+        member_access_node = ('member_access', ('identifier', p[1], p.lineno(1)), p[3], p.lineno(1))
+        p[0] = ('member_assignment', member_access_node, p[5], p.lineno(4)) # Línea del '='
     else:
         # Asignación a variable global: inputPass = "new_pass"
-        p[0] = ('assignment', p[1], p[3])
+        p[0] = ('assignment', p[1], p[3], p.lineno(2)) # Línea del '='
 
 def p_llamada_accion(p):
     'llamada_accion : IDENTIFICADOR PUNTO IDENTIFICADOR'
-    # Llamada a acción: front_door.force_unlock
-    p[0] = ('action_call', p[1], p[3])
+    p[0] = ('action_call', p[1], p[3], p.lineno(1))
 
 def p_llamada_show(p):
     'llamada_show : SHOW LPAREN expresion RPAREN'
-    # Llamada a show: show("hola")
-    p[0] = ('show_call', p[3])
+    p[0] = ('show_call', p[3], p.lineno(1))
 
 # ==========================================================
 # MANEJO DE ERRORES
