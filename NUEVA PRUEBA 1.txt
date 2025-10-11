@@ -39,7 +39,8 @@ program SmartHome {
          when: (main_clock.$TIME.check() == main_clock.report_time.check()) ->
             show("--- Reporte de Estado Diario ---"),
             show("Estado actual de la puerta:"),
-            show((front_door).check())
+            show(front_door.check())
       }
    }
 }
+

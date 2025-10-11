@@ -406,7 +406,7 @@ class CompilerGUI:
         # 1. VERIFICAR SI EL ÁRBOL YA EXISTE
         if not self.syntax_tree:
             messagebox.showinfo("Árbol no disponible",
-                                "Debes compilar el código primero para generar el árbol sintáctico.")
+                                "Debes compilar el código de FORMA EXITOSA primero para generar el árbol sintáctico.")
             return
 
         if not LIBRERIAS_GRAFICAS_OK:
