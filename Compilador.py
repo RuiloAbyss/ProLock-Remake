@@ -1,9 +1,10 @@
 import os
 import tkinter as tk
 from tkinter import font, filedialog, scrolledtext, ttk, messagebox
-import lexico as AL
-import sintactico as AS
-import arbolSintaxis as DA
+import lexico as ANLX
+import sintactico as ANSX
+import arbolSintaxis as ARSX
+import semantico as ANSM 
 
 try:
     from graphviz import Source
@@ -77,6 +78,7 @@ class CompilerGUI:
         self.root.config(bg=self.colors["background"])
         
         self.current_filepath = None #guardar los nombres de los archivos para copiar su nombre en otras exportaciones
+        self.syntax_tree = None #
 
         # Fuente base
         self.text_font = font.Font(family="Consolas", size=12)
@@ -158,6 +160,7 @@ class CompilerGUI:
         self.console_area.tag_config('error', foreground=self.colors["error"])
         self.console_area.tag_config('success', foreground=self.colors["success"])
         self.console_area.tag_config('info', foreground=self.colors["info"])
+        self.console_area.tag_config('warning', foreground="#FFA000") 
 
         # Inicializar numeración
         self.update_line_numbers()
@@ -225,17 +228,18 @@ class CompilerGUI:
                 file.write(self.text_area.get("1.0", tk.END))
     
 
+    # magico
     def compilar(self):
         """
-        Orquesta el análisis léxico y sintáctico en fases separadas.
-        La fase sintáctica solo se ejecuta si la léxica es exitosa.
+        Orquesta el análisis léxico, sintáctico y semántico en fases.
+        Guarda el árbol de sintaxis en self.syntax_tree si tiene éxito.
         """
         # 0. PREPARACIÓN
         self.console_area.config(state=tk.NORMAL)
         self.console_area.delete("1.0", tk.END)
         codigo = self.text_area.get("1.0", tk.END)
+        self.syntax_tree = None # Reinicia el árbol en cada compilación
 
-        # Validar si hay código para analizar
         if not codigo.strip():
             self.console_area.insert(tk.END, "El área de código está vacía.\n")
             self.console_area.config(state=tk.DISABLED)
@@ -244,57 +248,76 @@ class CompilerGUI:
         # ==========================================================
         # FASE 1: ANÁLISIS LÉXICO
         # ==========================================================
-        self.console_area.insert(tk.END, "--- Iniciando Fase 1: Análisis Léxico ---\n")
+        self.console_area.insert(tk.END, "--- Iniciando Fase 1: Análisis Léxico ---\n", 'info')
+        ANLX.analisis(codigo)
+        self.tokens_identificados = ANLX.tokens_identificados
+        errores_lexicos = [token for token in self.tokens_identificados if token[1] == 'ERROR']
         
-        AL.analisis(codigo) # El módulo léxico se encarga de llenar sus listas de tokens y errores
-        
-        errores_lexicos = AL.lista_errores_lexicos
-        self.tokens_identificados = AL.tokens_identificados
-
-        # CONDICIÓN DE FALLO: Si hay errores léxicos O no se encontró ningún token
-        if errores_lexicos or not self.tokens_identificados:
-            self.console_area.insert(tk.END, f"Análisis léxico fallido. Se encontraron problemas:\n", 'error')
-            
-            # Caso especial: no hay tokens, pero tampoco errores (código vacío o con solo comentarios)
-            if not self.tokens_identificados and not errores_lexicos:
-                self.console_area.insert(tk.END, " - Error: El código no contiene ningún token válido para analizar.\n", 'error')
-            
-            # Mostrar todos los errores léxicos encontrados
-            for token in self.tokens_identificados:
-                # Desempaquetamos la tupla del token para acceder a sus datos
-                token_value, token_type, token_line, token_col = token
-                
-                # Si encontramos un token que fue marcado como ERROR...
-                if token_type == 'ERROR':
-                    # ...construimos el mensaje de error detallado y lo insertamos en la consola.
-                    error_msg = f" - Símbolo no reconocido '{token_value}' en línea {token_line}, columna {token_col}\n"
-                    self.console_area.insert(tk.END, error_msg, 'error')
+        if errores_lexicos:
+            self.console_area.insert(tk.END, f"Análisis léxico fallido. Se encontraron {len(errores_lexicos)} errores:\n", 'error')
+            for error in errores_lexicos:
+                error_msg = f" - Símbolo no reconocido '{error[0]}' en línea {error[2]}, columna {error[3]}\n"
+                self.console_area.insert(tk.END, error_msg, 'error')
+            self.console_area.config(state=tk.DISABLED)
+            return
         else:
-            self.console_area.insert(tk.END, f" Análisis léxico completado. {len(self.tokens_identificados)} tokens encontrados.\n\n", 'success')
+            self.console_area.insert(tk.END, "Análisis léxico completado. Sin errores.\n\n", 'success')
 
         # ==========================================================
-        # FASE 2: ANÁLISIS SINTÁCTICO (Solo si la Fase 1 tuvo éxito)
+        # FASE 2: ANÁLISIS SINTÁCTICO
         # ==========================================================
-        self.console_area.insert(tk.END, "--- Iniciando Fase 2: Análisis Sintáctico ---\n")
+        self.console_area.insert(tk.END, "--- Iniciando Fase 2: Análisis Sintáctico ---\n", 'info')
+        ANSX.limpiar_errores_sintacticos()
+        ANLX.lexer.lineno = 1
         
-        AL.lexer.lineno = 1 # Reiniciamos el contador de lineas después de haber cumplido la fase léxica
-        AS.limpiar_errores_sintacticos() # Limpiar errores de una ejecución previa
+        # Aquí es donde se genera y se guarda el árbol
+        self.syntax_tree = ANSX.parser.parse(codigo, lexer=ANLX.lexer)
         
-        # El parser de YACC reutiliza el lexer y su estado
-        global resultadosSintactico
-        resultadosSintactico = AS.parser.parse(codigo, lexer=AL.lexer)
-        
-        errores_sintacticos = AS.errores_sintacticos
-
-        # CONDICIÓN DE FALLO: Si hay errores sintácticos
-        if errores_sintacticos:
-            self.console_area.insert(tk.END, f"Análisis sintáctico fallido. Se encontraron problemas de estructura:\n")
-            for error in errores_sintacticos:
+        if ANSX.errores_sintacticos or not self.syntax_tree:
+            self.console_area.insert(tk.END, "Análisis sintáctico fallido. La estructura del programa es incorrecta.\n", 'error')
+            for error in ANSX.errores_sintacticos:
                 self.console_area.insert(tk.END, f" - {error}\n", 'error')
+            # Importante: Si falla, nos aseguramos que el árbol sea None
+            self.syntax_tree = None
+            self.console_area.config(state=tk.DISABLED)
+            return
         else:
             self.console_area.insert(tk.END, "Análisis sintáctico completado. La estructura del programa es correcta.\n\n", 'success')
-            self.console_area.insert(tk.END, "¡Análisis completado con éxito!\n")
-        
+
+        # En Compilador.py, dentro de compilar, en la FASE 3
+
+# ==========================================================
+# FASE 3: ANÁLISIS SEMÁNTICO
+# ==========================================================
+        self.console_area.insert(tk.END, "--- Iniciando Fase 3: Análisis Semántico ---\n", 'info')
+        # --- Pasamos el código fuente como argumento ---
+        resultados_semanticos = ANSM.analisis_semantico(self.syntax_tree, codigo)
+
+        errores = resultados_semanticos.get('errors', [])
+        warnings = resultados_semanticos.get('warnings', [])
+
+        if errores:
+            self.console_area.insert(tk.END, f"Análisis semántico fallido. Se encontraron {len(errores)} problemas de lógica:\n", 'error')
+            for err in errores:
+                # Imprimimos el error formateado
+                error_msg = f" {err['message']}\n" + \
+                            f"   > Línea {err['line']}: {err['content']}\n" + \
+                            f"     {err['pointer']}\n"
+                self.console_area.insert(tk.END, error_msg, 'error')
+        else:
+            self.console_area.insert(tk.END, "Análisis semántico completado. La lógica del programa es correcta.\n\n", 'success')
+            if not warnings: # Solo muestra éxito total si no hay advertencias
+                self.console_area.insert(tk.END, "¡Compilación finalizada con éxito!\n", 'success')
+
+        if warnings:
+            self.console_area.insert(tk.END, f"Se encontraron {len(warnings)} advertencias:\n", 'warning')
+            for warn in warnings:
+                # Imprimimos la advertencia formateada
+                warn_msg = f" {warn['message']}\n" + \
+                        f"   > Línea {warn['line']}: {warn['content']}\n" + \
+                        f"     {warn['pointer']}\n"
+                self.console_area.insert(tk.END, warn_msg, 'warning')
+
         self.console_area.config(state=tk.DISABLED)
 
     # ... (La función ver_tokens y las otras permanecen igual) ...
@@ -321,7 +344,7 @@ class CompilerGUI:
         tree = ttk.Treeview(frame, columns=columns, show='headings', 
                             yscrollcommand=scrollbar.set) # <-- El padre es 'frame'
         
-        # CORRECCIÓN 2: Se empaqueta a la izquierda del frame
+        # Se empaqueta a la izquierda del frame
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True) 
 
         # Configurar el Scrollbar para que controle el Treeview
@@ -354,63 +377,73 @@ class CompilerGUI:
                 
             tree.insert('', tk.END, values=(token_value, token_type, token_line, token_col), tags=final_tags)
 
+    def _generar_arbol_sintactico(self):
+        """
+        Realiza el análisis léxico y sintáctico para generar el AST.
+        Devuelve el árbol si tiene éxito, o None si falla.
+        """
+        codigo = self.text_area.get("1.0", tk.END)
+        if not codigo.strip():
+            return None
+
+        # Realizar análisis léxico y sintáctico
+        ANLX.analisis(codigo)
+        ANSX.limpiar_errores_sintacticos()
+        ANLX.lexer.lineno = 1 # Es crucial reiniciar el lexer
+        
+        syntax_tree = ANSX.parser.parse(codigo, lexer=ANLX.lexer)
+        
+        # Si hay errores o el árbol no se creó, es un fallo
+        if ANSX.errores_sintacticos or not syntax_tree:
+            return None
+        
+        return syntax_tree
+
     def ver_arbol(self):
         """
-        Genera y muestra el árbol de sintaxis, guardando la imagen
-        en una subcarpeta llamada 'diagrams'.
+        Dibuja y muestra el árbol de sintaxis si ya fue generado por el compilador.
         """
+        # 1. VERIFICAR SI EL ÁRBOL YA EXISTE
+        if not self.syntax_tree:
+            messagebox.showinfo("Árbol no disponible",
+                                "Debes compilar el código primero para generar el árbol sintáctico.")
+            return
+
         if not LIBRERIAS_GRAFICAS_OK:
-            messagebox.showerror("Librerías Faltantes", 
+            messagebox.showerror("Librerías Faltantes",
                                 "Para ver el árbol, necesitas instalar 'graphviz' y 'pillow'.\n"
-                                "Ejecuta en la terminal: pip install graphviz pillow")
+                                "Ejecuta: pip install graphviz pillow")
             return
 
-        codigo = self.text_area.get("1.0", tk.END)
-        
-        # Análisis previo y obtención del árbol (sin cambios)
-        AL.analisis(codigo)
-        AS.limpiar_errores_sintacticos() 
-        syntax_tree = AS.parser.parse(codigo, lexer=AL.lexer)
-        
-        if not syntax_tree or AS.errores_sintacticos:
-            messagebox.showerror("Error de Sintaxis", 
-                                "No se puede generar el árbol porque el código tiene errores.\n"
-                                "Usa 'Analizar Código' para ver los detalles.")
-            return
-
+        # 2. SI EL ÁRBOL EXISTE, PROCEDE A DIBUJARLO
         try:
-            # Lógica para obtener el nombre base del archivo (sin cambios)
             output_base_name = "arbol_sin_nombre"
             if self.current_filepath:
                 base = os.path.basename(self.current_filepath)
                 output_base_name = os.path.splitext(base)[0]
-            elif isinstance(syntax_tree, tuple) and len(syntax_tree) > 1:
-                output_base_name = syntax_tree[1]
-
-            # 1. Definir el nombre de la subcarpeta y asegurarse de que exista.
-            diagram_dir = "diagrams"
-            os.makedirs(diagram_dir, exist_ok=True) # <-- Crea la carpeta si no existe
-
-            # 2. Construir la ruta completa del archivo, incluyendo la subcarpeta.
-            #    os.path.join es la forma correcta de unir rutas de carpetas y archivos.
-            output_filepath = os.path.join(diagram_dir, output_base_name)
-            output_image_filepath = f"{output_filepath}.png"
             
-            graphviz_code = DA.ply_tree_to_graphviz(syntax_tree)
+            diagram_dir = "diagrams"
+            os.makedirs(diagram_dir, exist_ok=True)
+            
+            output_filepath = os.path.join(diagram_dir, output_base_name)
+            
+            # Usa self.syntax_tree directamente
+            graphviz_code = ARSX.ply_tree_to_graphviz(self.syntax_tree)
             graph = Source(graphviz_code)
             
-            # Renderizar y abrir usando la nueva ruta completa
-            graph.render(output_filepath, format='png', cleanup=True)
+            # Renderiza la imagen
+            output_image_filepath = graph.render(output_filepath, format='png', cleanup=True)
+            
             image = Image.open(output_image_filepath)
             image.show()
             
             self.console_area.config(state=tk.NORMAL)
-            self.console_area.insert(tk.END, f"[INFO] Árbol para '{output_base_name}' guardado en la carpeta '{diagram_dir}'.\n", 'info')
+            self.console_area.insert(tk.END, f"[INFO] Árbol para '{output_base_name}' guardado en '{diagram_dir}'.\n", 'info')
             self.console_area.config(state=tk.DISABLED)
 
         except Exception as e:
-            messagebox.showerror("Error de Graphviz", 
-                                f"No se pudo renderizar el árbol. ¿Instalaste Graphviz y lo añadiste al PATH?\n\nError: {e}")
+            messagebox.showerror("Error de Graphviz",
+                                f"No se pudo renderizar el árbol. Revisa tu instalación de Graphviz.\n\nError: {e}")
 
 # --- Código para correr la aplicación ---
 if __name__ == "__main__":

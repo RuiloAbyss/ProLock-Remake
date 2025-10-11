@@ -14,103 +14,115 @@ Rule 3     bloque_definiciones -> definicion
 Rule 4     definicion -> def_lock
 Rule 5     definicion -> def_clock
 Rule 6     definicion -> def_routine
-Rule 7     def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-Rule 8     def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-Rule 9     bloque_estado -> STATE DOS_PUNTOS lista_variables
-Rule 10    lista_variables -> lista_variables declaracion
-Rule 11    lista_variables -> declaracion
-Rule 12    declaracion -> declaracion_variable
-Rule 13    declaracion -> declaracion_nativa
-Rule 14    declaracion_variable -> tipo IDENTIFICADOR IGUAL valor
-Rule 15    declaracion_nativa -> NATIVA IGUAL valor
-Rule 16    tipo -> BOOLEAN
-Rule 17    tipo -> STRING
-Rule 18    tipo -> TIME
-Rule 19    tipo -> MOMENT
-Rule 20    valor -> TRUE
-Rule 21    valor -> FALSE
-Rule 22    valor -> CADENA
-Rule 23    valor -> valor_momento
-Rule 24    valor -> CURRENT_TIME LPAREN RPAREN
-Rule 25    valor_momento -> TIEMPO
-Rule 26    def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
-Rule 27    bloque_acciones -> bloque_acciones def_action
-Rule 28    bloque_acciones -> def_action
-Rule 29    def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
-Rule 30    clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia
-Rule 31    condicion -> expresion opLOGICO expresion
-Rule 32    expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
-Rule 33    expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
-Rule 34    nombre_variable -> IDENTIFICADOR
-Rule 35    nombre_variable -> NATIVA
-Rule 36    consecuencia -> llamada
-Rule 37    consecuencia -> consecuencia COMA llamada
-Rule 38    llamada -> SHOW LPAREN argumento_show RPAREN
-Rule 39    llamada -> IDENTIFICADOR PUNTO IDENTIFICADOR
-Rule 40    argumento_show -> CADENA
-Rule 41    argumento_show -> expresion
+Rule 7     definicion -> declaracion_variable
+Rule 8     def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+Rule 9     def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+Rule 10    bloque_estado -> STATE DOS_PUNTOS lista_variables
+Rule 11    lista_variables -> lista_variables declaracion_variable
+Rule 12    lista_variables -> declaracion_variable
+Rule 13    declaracion_variable -> tipo IDENTIFICADOR IGUAL valor
+Rule 14    declaracion_variable -> NATIVA IGUAL valor
+Rule 15    tipo -> BOOLEAN
+Rule 16    tipo -> STRING
+Rule 17    tipo -> TIME
+Rule 18    tipo -> MOMENT
+Rule 19    valor -> TRUE
+Rule 20    valor -> FALSE
+Rule 21    valor -> CADENA
+Rule 22    valor -> TIEMPO
+Rule 23    valor -> CURRENT_TIME LPAREN RPAREN
+Rule 24    def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
+Rule 25    bloque_acciones -> bloque_acciones def_action
+Rule 26    bloque_acciones -> def_action
+Rule 27    def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
+Rule 28    clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia
+Rule 29    condicion -> expresion opLOGICO expresion
+Rule 30    expresion -> llamada_metodo
+Rule 31    expresion -> acceso_miembro
+Rule 32    expresion -> identificador_simple
+Rule 33    expresion -> valor_literal
+Rule 34    identificador_simple -> IDENTIFICADOR
+Rule 35    valor_literal -> CADENA
+Rule 36    valor_literal -> TRUE
+Rule 37    valor_literal -> FALSE
+Rule 38    valor_literal -> TIEMPO
+Rule 39    acceso_miembro -> expresion PUNTO NATIVA
+Rule 40    acceso_miembro -> expresion PUNTO IDENTIFICADOR
+Rule 41    llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN
+Rule 42    llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
+Rule 43    consecuencia -> enunciado_accion
+Rule 44    consecuencia -> consecuencia COMA enunciado_accion
+Rule 45    enunciado_accion -> asignacion
+Rule 46    enunciado_accion -> llamada_accion
+Rule 47    enunciado_accion -> llamada_show
+Rule 48    asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion
+Rule 49    asignacion -> IDENTIFICADOR IGUAL expresion
+Rule 50    llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR
+Rule 51    llamada_show -> SHOW LPAREN expresion RPAREN
 
 Terminals, with rules where they appear
 
-ACTION               : 29
-APERTURA_LLAVE       : 1 7 8 26 29
-BOOLEAN              : 16
-CADENA               : 22 40
-CHECK                : 32 33
-CIERRE_LLAVE         : 1 7 8 26 29
-CLOCK                : 8
-COMA                 : 37
+ACTION               : 27
+APERTURA_LLAVE       : 1 8 9 24 27
+BOOLEAN              : 15
+CADENA               : 21 35
+CHECK                : 41 42
+CIERRE_LLAVE         : 1 8 9 24 27
+CLOCK                : 9
+COMA                 : 44
 COMENTARIO           : 
-CURRENT_TIME         : 24
-DOS_PUNTOS           : 9 30
-FALSE                : 21
-FLECHA               : 30
-IDENTIFICADOR        : 1 7 8 14 26 29 32 33 34 39 39
-IGUAL                : 14 15
-LOCK                 : 7
-LPAREN               : 7 8 24 30 32 33 33 38
-MOMENT               : 19
-NATIVA               : 15 35
+CURRENT_TIME         : 23
+DOS_PUNTOS           : 10 28
+FALSE                : 20 37
+FLECHA               : 28
+IDENTIFICADOR        : 1 8 9 13 24 27 34 40 48 48 49 50 50
+IGUAL                : 13 14 48 49
+LOCK                 : 8
+LPAREN               : 8 9 23 28 41 42 42 51
+MOMENT               : 18
+NATIVA               : 14 39
 NUMERO               : 
 PROGRAM              : 1
-PUNTO                : 32 32 33 39
-ROUTINE              : 26
-RPAREN               : 7 8 24 30 32 33 33 38
-SHOW                 : 38
-STATE                : 9
-STRING               : 17
-TIEMPO               : 25
-TIME                 : 18
-TRUE                 : 20
-WHEN                 : 30
+PUNTO                : 39 40 41 42 48 50
+ROUTINE              : 24
+RPAREN               : 8 9 23 28 41 42 42 51
+SHOW                 : 51
+STATE                : 10
+STRING               : 16
+TIEMPO               : 22 38
+TIME                 : 17
+TRUE                 : 19 36
+WHEN                 : 28
 error                : 
-opLOGICO             : 31
+opLOGICO             : 29
 
 Nonterminals, with rules where they appear
 
-argumento_show       : 38
-bloque_acciones      : 26 27
+acceso_miembro       : 31
+asignacion           : 45
+bloque_acciones      : 24 25
 bloque_definiciones  : 1 2
-bloque_estado        : 7 8
-clausula_when        : 29
-condicion            : 30
-consecuencia         : 30 37
-declaracion          : 10 11
-declaracion_nativa   : 13
-declaracion_variable : 12
-def_action           : 27 28
+bloque_estado        : 8 9
+clausula_when        : 27
+condicion            : 28
+consecuencia         : 28 44
+declaracion_variable : 7 11 12
+def_action           : 25 26
 def_clock            : 5
 def_lock             : 4
 def_routine          : 6
 definicion           : 2 3
-expresion            : 31 31 41
-lista_variables      : 9 10
-llamada              : 36 37
-nombre_variable      : 32
+enunciado_accion     : 43 44
+expresion            : 29 29 39 40 41 42 48 49 51
+identificador_simple : 32
+lista_variables      : 10 11
+llamada_accion       : 46
+llamada_metodo       : 30
+llamada_show         : 47
 programa             : 0
-tipo                 : 14
-valor                : 14 15
-valor_momento        : 23
+tipo                 : 13
+valor                : 13 14
+valor_literal        : 33
 
 Parsing method: LALR
 
@@ -151,19 +163,33 @@ state 4
     (4) definicion -> . def_lock
     (5) definicion -> . def_clock
     (6) definicion -> . def_routine
-    (7) def_lock -> . LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-    (8) def_clock -> . CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-    (26) def_routine -> . ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
+    (7) definicion -> . declaracion_variable
+    (8) def_lock -> . LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (9) def_clock -> . CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (24) def_routine -> . ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
+    (13) declaracion_variable -> . tipo IDENTIFICADOR IGUAL valor
+    (14) declaracion_variable -> . NATIVA IGUAL valor
+    (15) tipo -> . BOOLEAN
+    (16) tipo -> . STRING
+    (17) tipo -> . TIME
+    (18) tipo -> . MOMENT
 
-    LOCK            shift and go to state 10
-    CLOCK           shift and go to state 11
-    ROUTINE         shift and go to state 12
+    LOCK            shift and go to state 11
+    CLOCK           shift and go to state 12
+    ROUTINE         shift and go to state 13
+    NATIVA          shift and go to state 15
+    BOOLEAN         shift and go to state 16
+    STRING          shift and go to state 17
+    TIME            shift and go to state 18
+    MOMENT          shift and go to state 19
 
     bloque_definiciones            shift and go to state 5
     definicion                     shift and go to state 6
     def_lock                       shift and go to state 7
     def_clock                      shift and go to state 8
     def_routine                    shift and go to state 9
+    declaracion_variable           shift and go to state 10
+    tipo                           shift and go to state 14
 
 state 5
 
@@ -172,19 +198,33 @@ state 5
     (4) definicion -> . def_lock
     (5) definicion -> . def_clock
     (6) definicion -> . def_routine
-    (7) def_lock -> . LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-    (8) def_clock -> . CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-    (26) def_routine -> . ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
+    (7) definicion -> . declaracion_variable
+    (8) def_lock -> . LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (9) def_clock -> . CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (24) def_routine -> . ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
+    (13) declaracion_variable -> . tipo IDENTIFICADOR IGUAL valor
+    (14) declaracion_variable -> . NATIVA IGUAL valor
+    (15) tipo -> . BOOLEAN
+    (16) tipo -> . STRING
+    (17) tipo -> . TIME
+    (18) tipo -> . MOMENT
 
-    CIERRE_LLAVE    shift and go to state 13
-    LOCK            shift and go to state 10
-    CLOCK           shift and go to state 11
-    ROUTINE         shift and go to state 12
+    CIERRE_LLAVE    shift and go to state 20
+    LOCK            shift and go to state 11
+    CLOCK           shift and go to state 12
+    ROUTINE         shift and go to state 13
+    NATIVA          shift and go to state 15
+    BOOLEAN         shift and go to state 16
+    STRING          shift and go to state 17
+    TIME            shift and go to state 18
+    MOMENT          shift and go to state 19
 
-    definicion                     shift and go to state 14
+    definicion                     shift and go to state 21
     def_lock                       shift and go to state 7
     def_clock                      shift and go to state 8
     def_routine                    shift and go to state 9
+    declaracion_variable           shift and go to state 10
+    tipo                           shift and go to state 14
 
 state 6
 
@@ -194,6 +234,11 @@ state 6
     LOCK            reduce using rule 3 (bloque_definiciones -> definicion .)
     CLOCK           reduce using rule 3 (bloque_definiciones -> definicion .)
     ROUTINE         reduce using rule 3 (bloque_definiciones -> definicion .)
+    NATIVA          reduce using rule 3 (bloque_definiciones -> definicion .)
+    BOOLEAN         reduce using rule 3 (bloque_definiciones -> definicion .)
+    STRING          reduce using rule 3 (bloque_definiciones -> definicion .)
+    TIME            reduce using rule 3 (bloque_definiciones -> definicion .)
+    MOMENT          reduce using rule 3 (bloque_definiciones -> definicion .)
 
 
 state 7
@@ -204,6 +249,11 @@ state 7
     LOCK            reduce using rule 4 (definicion -> def_lock .)
     CLOCK           reduce using rule 4 (definicion -> def_lock .)
     ROUTINE         reduce using rule 4 (definicion -> def_lock .)
+    NATIVA          reduce using rule 4 (definicion -> def_lock .)
+    BOOLEAN         reduce using rule 4 (definicion -> def_lock .)
+    STRING          reduce using rule 4 (definicion -> def_lock .)
+    TIME            reduce using rule 4 (definicion -> def_lock .)
+    MOMENT          reduce using rule 4 (definicion -> def_lock .)
 
 
 state 8
@@ -214,6 +264,11 @@ state 8
     LOCK            reduce using rule 5 (definicion -> def_clock .)
     CLOCK           reduce using rule 5 (definicion -> def_clock .)
     ROUTINE         reduce using rule 5 (definicion -> def_clock .)
+    NATIVA          reduce using rule 5 (definicion -> def_clock .)
+    BOOLEAN         reduce using rule 5 (definicion -> def_clock .)
+    STRING          reduce using rule 5 (definicion -> def_clock .)
+    TIME            reduce using rule 5 (definicion -> def_clock .)
+    MOMENT          reduce using rule 5 (definicion -> def_clock .)
 
 
 state 9
@@ -224,37 +279,99 @@ state 9
     LOCK            reduce using rule 6 (definicion -> def_routine .)
     CLOCK           reduce using rule 6 (definicion -> def_routine .)
     ROUTINE         reduce using rule 6 (definicion -> def_routine .)
+    NATIVA          reduce using rule 6 (definicion -> def_routine .)
+    BOOLEAN         reduce using rule 6 (definicion -> def_routine .)
+    STRING          reduce using rule 6 (definicion -> def_routine .)
+    TIME            reduce using rule 6 (definicion -> def_routine .)
+    MOMENT          reduce using rule 6 (definicion -> def_routine .)
 
 
 state 10
 
-    (7) def_lock -> LOCK . IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (7) definicion -> declaracion_variable .
 
-    IDENTIFICADOR   shift and go to state 15
+    CIERRE_LLAVE    reduce using rule 7 (definicion -> declaracion_variable .)
+    LOCK            reduce using rule 7 (definicion -> declaracion_variable .)
+    CLOCK           reduce using rule 7 (definicion -> declaracion_variable .)
+    ROUTINE         reduce using rule 7 (definicion -> declaracion_variable .)
+    NATIVA          reduce using rule 7 (definicion -> declaracion_variable .)
+    BOOLEAN         reduce using rule 7 (definicion -> declaracion_variable .)
+    STRING          reduce using rule 7 (definicion -> declaracion_variable .)
+    TIME            reduce using rule 7 (definicion -> declaracion_variable .)
+    MOMENT          reduce using rule 7 (definicion -> declaracion_variable .)
 
 
 state 11
 
-    (8) def_clock -> CLOCK . IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (8) def_lock -> LOCK . IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    IDENTIFICADOR   shift and go to state 16
+    IDENTIFICADOR   shift and go to state 22
 
 
 state 12
 
-    (26) def_routine -> ROUTINE . IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
+    (9) def_clock -> CLOCK . IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    IDENTIFICADOR   shift and go to state 17
+    IDENTIFICADOR   shift and go to state 23
 
 
 state 13
+
+    (24) def_routine -> ROUTINE . IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
+
+    IDENTIFICADOR   shift and go to state 24
+
+
+state 14
+
+    (13) declaracion_variable -> tipo . IDENTIFICADOR IGUAL valor
+
+    IDENTIFICADOR   shift and go to state 25
+
+
+state 15
+
+    (14) declaracion_variable -> NATIVA . IGUAL valor
+
+    IGUAL           shift and go to state 26
+
+
+state 16
+
+    (15) tipo -> BOOLEAN .
+
+    IDENTIFICADOR   reduce using rule 15 (tipo -> BOOLEAN .)
+
+
+state 17
+
+    (16) tipo -> STRING .
+
+    IDENTIFICADOR   reduce using rule 16 (tipo -> STRING .)
+
+
+state 18
+
+    (17) tipo -> TIME .
+
+    IDENTIFICADOR   reduce using rule 17 (tipo -> TIME .)
+
+
+state 19
+
+    (18) tipo -> MOMENT .
+
+    IDENTIFICADOR   reduce using rule 18 (tipo -> MOMENT .)
+
+
+state 20
 
     (1) programa -> PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE .
 
     $end            reduce using rule 1 (programa -> PROGRAM IDENTIFICADOR APERTURA_LLAVE bloque_definiciones CIERRE_LLAVE .)
 
 
-state 14
+state 21
 
     (2) bloque_definiciones -> bloque_definiciones definicion .
 
@@ -262,802 +379,1053 @@ state 14
     LOCK            reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
     CLOCK           reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
     ROUTINE         reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
-
-
-state 15
-
-    (7) def_lock -> LOCK IDENTIFICADOR . LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-
-    LPAREN          shift and go to state 18
-
-
-state 16
-
-    (8) def_clock -> CLOCK IDENTIFICADOR . LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-
-    LPAREN          shift and go to state 19
-
-
-state 17
-
-    (26) def_routine -> ROUTINE IDENTIFICADOR . APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
-
-    APERTURA_LLAVE  shift and go to state 20
-
-
-state 18
-
-    (7) def_lock -> LOCK IDENTIFICADOR LPAREN . RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-
-    RPAREN          shift and go to state 21
-
-
-state 19
-
-    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN . RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-
-    RPAREN          shift and go to state 22
-
-
-state 20
-
-    (26) def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE . bloque_acciones CIERRE_LLAVE
-    (27) bloque_acciones -> . bloque_acciones def_action
-    (28) bloque_acciones -> . def_action
-    (29) def_action -> . ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
-
-    ACTION          shift and go to state 25
-
-    bloque_acciones                shift and go to state 23
-    def_action                     shift and go to state 24
-
-state 21
-
-    (7) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN . APERTURA_LLAVE bloque_estado CIERRE_LLAVE
-
-    APERTURA_LLAVE  shift and go to state 26
+    NATIVA          reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
+    BOOLEAN         reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
+    STRING          reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
+    TIME            reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
+    MOMENT          reduce using rule 2 (bloque_definiciones -> bloque_definiciones definicion .)
 
 
 state 22
 
-    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN . APERTURA_LLAVE bloque_estado CIERRE_LLAVE
+    (8) def_lock -> LOCK IDENTIFICADOR . LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    APERTURA_LLAVE  shift and go to state 27
+    LPAREN          shift and go to state 27
 
 
 state 23
 
-    (26) def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones . CIERRE_LLAVE
-    (27) bloque_acciones -> bloque_acciones . def_action
-    (29) def_action -> . ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
+    (9) def_clock -> CLOCK IDENTIFICADOR . LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    CIERRE_LLAVE    shift and go to state 28
-    ACTION          shift and go to state 25
+    LPAREN          shift and go to state 28
 
-    def_action                     shift and go to state 29
 
 state 24
 
-    (28) bloque_acciones -> def_action .
+    (24) def_routine -> ROUTINE IDENTIFICADOR . APERTURA_LLAVE bloque_acciones CIERRE_LLAVE
 
-    CIERRE_LLAVE    reduce using rule 28 (bloque_acciones -> def_action .)
-    ACTION          reduce using rule 28 (bloque_acciones -> def_action .)
+    APERTURA_LLAVE  shift and go to state 29
 
 
 state 25
 
-    (29) def_action -> ACTION . IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
+    (13) declaracion_variable -> tipo IDENTIFICADOR . IGUAL valor
 
-    IDENTIFICADOR   shift and go to state 30
+    IGUAL           shift and go to state 30
 
 
 state 26
 
-    (7) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE . bloque_estado CIERRE_LLAVE
-    (9) bloque_estado -> . STATE DOS_PUNTOS lista_variables
+    (14) declaracion_variable -> NATIVA IGUAL . valor
+    (19) valor -> . TRUE
+    (20) valor -> . FALSE
+    (21) valor -> . CADENA
+    (22) valor -> . TIEMPO
+    (23) valor -> . CURRENT_TIME LPAREN RPAREN
 
-    STATE           shift and go to state 32
+    TRUE            shift and go to state 32
+    FALSE           shift and go to state 33
+    CADENA          shift and go to state 34
+    TIEMPO          shift and go to state 35
+    CURRENT_TIME    shift and go to state 36
 
-    bloque_estado                  shift and go to state 31
+    valor                          shift and go to state 31
 
 state 27
 
-    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE . bloque_estado CIERRE_LLAVE
-    (9) bloque_estado -> . STATE DOS_PUNTOS lista_variables
+    (8) def_lock -> LOCK IDENTIFICADOR LPAREN . RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    STATE           shift and go to state 32
+    RPAREN          shift and go to state 37
 
-    bloque_estado                  shift and go to state 33
 
 state 28
 
-    (26) def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .
+    (9) def_clock -> CLOCK IDENTIFICADOR LPAREN . RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    CIERRE_LLAVE    reduce using rule 26 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
-    LOCK            reduce using rule 26 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
-    CLOCK           reduce using rule 26 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
-    ROUTINE         reduce using rule 26 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    RPAREN          shift and go to state 38
 
 
 state 29
 
-    (27) bloque_acciones -> bloque_acciones def_action .
+    (24) def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE . bloque_acciones CIERRE_LLAVE
+    (25) bloque_acciones -> . bloque_acciones def_action
+    (26) bloque_acciones -> . def_action
+    (27) def_action -> . ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
 
-    CIERRE_LLAVE    reduce using rule 27 (bloque_acciones -> bloque_acciones def_action .)
-    ACTION          reduce using rule 27 (bloque_acciones -> bloque_acciones def_action .)
+    ACTION          shift and go to state 41
 
+    bloque_acciones                shift and go to state 39
+    def_action                     shift and go to state 40
 
 state 30
 
-    (29) def_action -> ACTION IDENTIFICADOR . APERTURA_LLAVE clausula_when CIERRE_LLAVE
+    (13) declaracion_variable -> tipo IDENTIFICADOR IGUAL . valor
+    (19) valor -> . TRUE
+    (20) valor -> . FALSE
+    (21) valor -> . CADENA
+    (22) valor -> . TIEMPO
+    (23) valor -> . CURRENT_TIME LPAREN RPAREN
 
-    APERTURA_LLAVE  shift and go to state 34
+    TRUE            shift and go to state 32
+    FALSE           shift and go to state 33
+    CADENA          shift and go to state 34
+    TIEMPO          shift and go to state 35
+    CURRENT_TIME    shift and go to state 36
 
+    valor                          shift and go to state 42
 
 state 31
 
-    (7) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado . CIERRE_LLAVE
+    (14) declaracion_variable -> NATIVA IGUAL valor .
 
-    CIERRE_LLAVE    shift and go to state 35
+    CIERRE_LLAVE    reduce using rule 14 (declaracion_variable -> NATIVA IGUAL valor .)
+    LOCK            reduce using rule 14 (declaracion_variable -> NATIVA IGUAL valor .)
+    CLOCK           reduce using rule 14 (declaracion_variable -> NATIVA IGUAL valor .)
+    ROUTINE         reduce using rule 14 (declaracion_variable -> NATIVA IGUAL valor .)
+    NATIVA          reduce using rule 14 (declaracion_variable -> NATIVA IGUAL valor .)
+    BOOLEAN         reduce using rule 14 (declaracion_variable -> NATIVA IGUAL valor .)
+    STRING          reduce using rule 14 (declaracion_variable -> NATIVA IGUAL valor .)
+    TIME            reduce using rule 14 (declaracion_variable -> NATIVA IGUAL valor .)
+    MOMENT          reduce using rule 14 (declaracion_variable -> NATIVA IGUAL valor .)
 
 
 state 32
 
-    (9) bloque_estado -> STATE . DOS_PUNTOS lista_variables
+    (19) valor -> TRUE .
 
-    DOS_PUNTOS      shift and go to state 36
+    CIERRE_LLAVE    reduce using rule 19 (valor -> TRUE .)
+    LOCK            reduce using rule 19 (valor -> TRUE .)
+    CLOCK           reduce using rule 19 (valor -> TRUE .)
+    ROUTINE         reduce using rule 19 (valor -> TRUE .)
+    NATIVA          reduce using rule 19 (valor -> TRUE .)
+    BOOLEAN         reduce using rule 19 (valor -> TRUE .)
+    STRING          reduce using rule 19 (valor -> TRUE .)
+    TIME            reduce using rule 19 (valor -> TRUE .)
+    MOMENT          reduce using rule 19 (valor -> TRUE .)
 
 
 state 33
 
-    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado . CIERRE_LLAVE
+    (20) valor -> FALSE .
 
-    CIERRE_LLAVE    shift and go to state 37
+    CIERRE_LLAVE    reduce using rule 20 (valor -> FALSE .)
+    LOCK            reduce using rule 20 (valor -> FALSE .)
+    CLOCK           reduce using rule 20 (valor -> FALSE .)
+    ROUTINE         reduce using rule 20 (valor -> FALSE .)
+    NATIVA          reduce using rule 20 (valor -> FALSE .)
+    BOOLEAN         reduce using rule 20 (valor -> FALSE .)
+    STRING          reduce using rule 20 (valor -> FALSE .)
+    TIME            reduce using rule 20 (valor -> FALSE .)
+    MOMENT          reduce using rule 20 (valor -> FALSE .)
 
 
 state 34
 
-    (29) def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE . clausula_when CIERRE_LLAVE
-    (30) clausula_when -> . WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia
+    (21) valor -> CADENA .
 
-    WHEN            shift and go to state 39
+    CIERRE_LLAVE    reduce using rule 21 (valor -> CADENA .)
+    LOCK            reduce using rule 21 (valor -> CADENA .)
+    CLOCK           reduce using rule 21 (valor -> CADENA .)
+    ROUTINE         reduce using rule 21 (valor -> CADENA .)
+    NATIVA          reduce using rule 21 (valor -> CADENA .)
+    BOOLEAN         reduce using rule 21 (valor -> CADENA .)
+    STRING          reduce using rule 21 (valor -> CADENA .)
+    TIME            reduce using rule 21 (valor -> CADENA .)
+    MOMENT          reduce using rule 21 (valor -> CADENA .)
 
-    clausula_when                  shift and go to state 38
 
 state 35
 
-    (7) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .
+    (22) valor -> TIEMPO .
 
-    CIERRE_LLAVE    reduce using rule 7 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
-    LOCK            reduce using rule 7 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
-    CLOCK           reduce using rule 7 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
-    ROUTINE         reduce using rule 7 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    CIERRE_LLAVE    reduce using rule 22 (valor -> TIEMPO .)
+    LOCK            reduce using rule 22 (valor -> TIEMPO .)
+    CLOCK           reduce using rule 22 (valor -> TIEMPO .)
+    ROUTINE         reduce using rule 22 (valor -> TIEMPO .)
+    NATIVA          reduce using rule 22 (valor -> TIEMPO .)
+    BOOLEAN         reduce using rule 22 (valor -> TIEMPO .)
+    STRING          reduce using rule 22 (valor -> TIEMPO .)
+    TIME            reduce using rule 22 (valor -> TIEMPO .)
+    MOMENT          reduce using rule 22 (valor -> TIEMPO .)
 
 
 state 36
 
-    (9) bloque_estado -> STATE DOS_PUNTOS . lista_variables
-    (10) lista_variables -> . lista_variables declaracion
-    (11) lista_variables -> . declaracion
-    (12) declaracion -> . declaracion_variable
-    (13) declaracion -> . declaracion_nativa
-    (14) declaracion_variable -> . tipo IDENTIFICADOR IGUAL valor
-    (15) declaracion_nativa -> . NATIVA IGUAL valor
-    (16) tipo -> . BOOLEAN
-    (17) tipo -> . STRING
-    (18) tipo -> . TIME
-    (19) tipo -> . MOMENT
+    (23) valor -> CURRENT_TIME . LPAREN RPAREN
 
-    NATIVA          shift and go to state 45
-    BOOLEAN         shift and go to state 46
-    STRING          shift and go to state 47
-    TIME            shift and go to state 48
-    MOMENT          shift and go to state 49
+    LPAREN          shift and go to state 43
 
-    lista_variables                shift and go to state 40
-    declaracion                    shift and go to state 41
-    declaracion_variable           shift and go to state 42
-    declaracion_nativa             shift and go to state 43
-    tipo                           shift and go to state 44
 
 state 37
 
-    (8) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .
+    (8) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN . APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    CIERRE_LLAVE    reduce using rule 8 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
-    LOCK            reduce using rule 8 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
-    CLOCK           reduce using rule 8 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
-    ROUTINE         reduce using rule 8 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    APERTURA_LLAVE  shift and go to state 44
 
 
 state 38
 
-    (29) def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when . CIERRE_LLAVE
+    (9) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN . APERTURA_LLAVE bloque_estado CIERRE_LLAVE
 
-    CIERRE_LLAVE    shift and go to state 50
+    APERTURA_LLAVE  shift and go to state 45
 
 
 state 39
 
-    (30) clausula_when -> WHEN . DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia
+    (24) def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones . CIERRE_LLAVE
+    (25) bloque_acciones -> bloque_acciones . def_action
+    (27) def_action -> . ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
 
-    DOS_PUNTOS      shift and go to state 51
+    CIERRE_LLAVE    shift and go to state 46
+    ACTION          shift and go to state 41
 
+    def_action                     shift and go to state 47
 
 state 40
 
-    (9) bloque_estado -> STATE DOS_PUNTOS lista_variables .
-    (10) lista_variables -> lista_variables . declaracion
-    (12) declaracion -> . declaracion_variable
-    (13) declaracion -> . declaracion_nativa
-    (14) declaracion_variable -> . tipo IDENTIFICADOR IGUAL valor
-    (15) declaracion_nativa -> . NATIVA IGUAL valor
-    (16) tipo -> . BOOLEAN
-    (17) tipo -> . STRING
-    (18) tipo -> . TIME
-    (19) tipo -> . MOMENT
+    (26) bloque_acciones -> def_action .
 
-    CIERRE_LLAVE    reduce using rule 9 (bloque_estado -> STATE DOS_PUNTOS lista_variables .)
-    NATIVA          shift and go to state 45
-    BOOLEAN         shift and go to state 46
-    STRING          shift and go to state 47
-    TIME            shift and go to state 48
-    MOMENT          shift and go to state 49
+    CIERRE_LLAVE    reduce using rule 26 (bloque_acciones -> def_action .)
+    ACTION          reduce using rule 26 (bloque_acciones -> def_action .)
 
-    declaracion                    shift and go to state 52
-    declaracion_variable           shift and go to state 42
-    declaracion_nativa             shift and go to state 43
-    tipo                           shift and go to state 44
 
 state 41
 
-    (11) lista_variables -> declaracion .
+    (27) def_action -> ACTION . IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE
 
-    NATIVA          reduce using rule 11 (lista_variables -> declaracion .)
-    BOOLEAN         reduce using rule 11 (lista_variables -> declaracion .)
-    STRING          reduce using rule 11 (lista_variables -> declaracion .)
-    TIME            reduce using rule 11 (lista_variables -> declaracion .)
-    MOMENT          reduce using rule 11 (lista_variables -> declaracion .)
-    CIERRE_LLAVE    reduce using rule 11 (lista_variables -> declaracion .)
+    IDENTIFICADOR   shift and go to state 48
 
 
 state 42
 
-    (12) declaracion -> declaracion_variable .
+    (13) declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .
 
-    NATIVA          reduce using rule 12 (declaracion -> declaracion_variable .)
-    BOOLEAN         reduce using rule 12 (declaracion -> declaracion_variable .)
-    STRING          reduce using rule 12 (declaracion -> declaracion_variable .)
-    TIME            reduce using rule 12 (declaracion -> declaracion_variable .)
-    MOMENT          reduce using rule 12 (declaracion -> declaracion_variable .)
-    CIERRE_LLAVE    reduce using rule 12 (declaracion -> declaracion_variable .)
+    CIERRE_LLAVE    reduce using rule 13 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    LOCK            reduce using rule 13 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    CLOCK           reduce using rule 13 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    ROUTINE         reduce using rule 13 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    NATIVA          reduce using rule 13 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    BOOLEAN         reduce using rule 13 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    STRING          reduce using rule 13 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    TIME            reduce using rule 13 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    MOMENT          reduce using rule 13 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
 
 
 state 43
 
-    (13) declaracion -> declaracion_nativa .
+    (23) valor -> CURRENT_TIME LPAREN . RPAREN
 
-    NATIVA          reduce using rule 13 (declaracion -> declaracion_nativa .)
-    BOOLEAN         reduce using rule 13 (declaracion -> declaracion_nativa .)
-    STRING          reduce using rule 13 (declaracion -> declaracion_nativa .)
-    TIME            reduce using rule 13 (declaracion -> declaracion_nativa .)
-    MOMENT          reduce using rule 13 (declaracion -> declaracion_nativa .)
-    CIERRE_LLAVE    reduce using rule 13 (declaracion -> declaracion_nativa .)
+    RPAREN          shift and go to state 49
 
 
 state 44
 
-    (14) declaracion_variable -> tipo . IDENTIFICADOR IGUAL valor
+    (8) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE . bloque_estado CIERRE_LLAVE
+    (10) bloque_estado -> . STATE DOS_PUNTOS lista_variables
 
-    IDENTIFICADOR   shift and go to state 53
+    STATE           shift and go to state 51
 
+    bloque_estado                  shift and go to state 50
 
 state 45
 
-    (15) declaracion_nativa -> NATIVA . IGUAL valor
+    (9) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE . bloque_estado CIERRE_LLAVE
+    (10) bloque_estado -> . STATE DOS_PUNTOS lista_variables
 
-    IGUAL           shift and go to state 54
+    STATE           shift and go to state 51
 
+    bloque_estado                  shift and go to state 52
 
 state 46
 
-    (16) tipo -> BOOLEAN .
+    (24) def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .
 
-    IDENTIFICADOR   reduce using rule 16 (tipo -> BOOLEAN .)
+    CIERRE_LLAVE    reduce using rule 24 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    LOCK            reduce using rule 24 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    CLOCK           reduce using rule 24 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    ROUTINE         reduce using rule 24 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    NATIVA          reduce using rule 24 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    BOOLEAN         reduce using rule 24 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    STRING          reduce using rule 24 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    TIME            reduce using rule 24 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
+    MOMENT          reduce using rule 24 (def_routine -> ROUTINE IDENTIFICADOR APERTURA_LLAVE bloque_acciones CIERRE_LLAVE .)
 
 
 state 47
 
-    (17) tipo -> STRING .
+    (25) bloque_acciones -> bloque_acciones def_action .
 
-    IDENTIFICADOR   reduce using rule 17 (tipo -> STRING .)
+    CIERRE_LLAVE    reduce using rule 25 (bloque_acciones -> bloque_acciones def_action .)
+    ACTION          reduce using rule 25 (bloque_acciones -> bloque_acciones def_action .)
 
 
 state 48
 
-    (18) tipo -> TIME .
+    (27) def_action -> ACTION IDENTIFICADOR . APERTURA_LLAVE clausula_when CIERRE_LLAVE
 
-    IDENTIFICADOR   reduce using rule 18 (tipo -> TIME .)
+    APERTURA_LLAVE  shift and go to state 53
 
 
 state 49
 
-    (19) tipo -> MOMENT .
+    (23) valor -> CURRENT_TIME LPAREN RPAREN .
 
-    IDENTIFICADOR   reduce using rule 19 (tipo -> MOMENT .)
+    CIERRE_LLAVE    reduce using rule 23 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    LOCK            reduce using rule 23 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    CLOCK           reduce using rule 23 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    ROUTINE         reduce using rule 23 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    NATIVA          reduce using rule 23 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    BOOLEAN         reduce using rule 23 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    STRING          reduce using rule 23 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    TIME            reduce using rule 23 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    MOMENT          reduce using rule 23 (valor -> CURRENT_TIME LPAREN RPAREN .)
 
 
 state 50
 
-    (29) def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE .
+    (8) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado . CIERRE_LLAVE
 
-    CIERRE_LLAVE    reduce using rule 29 (def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE .)
-    ACTION          reduce using rule 29 (def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE .)
+    CIERRE_LLAVE    shift and go to state 54
 
 
 state 51
 
-    (30) clausula_when -> WHEN DOS_PUNTOS . LPAREN condicion RPAREN FLECHA consecuencia
+    (10) bloque_estado -> STATE . DOS_PUNTOS lista_variables
 
-    LPAREN          shift and go to state 55
+    DOS_PUNTOS      shift and go to state 55
 
 
 state 52
 
-    (10) lista_variables -> lista_variables declaracion .
+    (9) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado . CIERRE_LLAVE
 
-    NATIVA          reduce using rule 10 (lista_variables -> lista_variables declaracion .)
-    BOOLEAN         reduce using rule 10 (lista_variables -> lista_variables declaracion .)
-    STRING          reduce using rule 10 (lista_variables -> lista_variables declaracion .)
-    TIME            reduce using rule 10 (lista_variables -> lista_variables declaracion .)
-    MOMENT          reduce using rule 10 (lista_variables -> lista_variables declaracion .)
-    CIERRE_LLAVE    reduce using rule 10 (lista_variables -> lista_variables declaracion .)
+    CIERRE_LLAVE    shift and go to state 56
 
 
 state 53
 
-    (14) declaracion_variable -> tipo IDENTIFICADOR . IGUAL valor
+    (27) def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE . clausula_when CIERRE_LLAVE
+    (28) clausula_when -> . WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia
 
-    IGUAL           shift and go to state 56
+    WHEN            shift and go to state 58
 
+    clausula_when                  shift and go to state 57
 
 state 54
 
-    (15) declaracion_nativa -> NATIVA IGUAL . valor
-    (20) valor -> . TRUE
-    (21) valor -> . FALSE
-    (22) valor -> . CADENA
-    (23) valor -> . valor_momento
-    (24) valor -> . CURRENT_TIME LPAREN RPAREN
-    (25) valor_momento -> . TIEMPO
+    (8) def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .
 
-    TRUE            shift and go to state 58
-    FALSE           shift and go to state 59
-    CADENA          shift and go to state 60
-    CURRENT_TIME    shift and go to state 62
-    TIEMPO          shift and go to state 63
+    CIERRE_LLAVE    reduce using rule 8 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    LOCK            reduce using rule 8 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    CLOCK           reduce using rule 8 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    ROUTINE         reduce using rule 8 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    NATIVA          reduce using rule 8 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    BOOLEAN         reduce using rule 8 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    STRING          reduce using rule 8 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    TIME            reduce using rule 8 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    MOMENT          reduce using rule 8 (def_lock -> LOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
 
-    valor                          shift and go to state 57
-    valor_momento                  shift and go to state 61
 
 state 55
 
-    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN . condicion RPAREN FLECHA consecuencia
-    (31) condicion -> . expresion opLOGICO expresion
-    (32) expresion -> . IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
-    (33) expresion -> . LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
+    (10) bloque_estado -> STATE DOS_PUNTOS . lista_variables
+    (11) lista_variables -> . lista_variables declaracion_variable
+    (12) lista_variables -> . declaracion_variable
+    (13) declaracion_variable -> . tipo IDENTIFICADOR IGUAL valor
+    (14) declaracion_variable -> . NATIVA IGUAL valor
+    (15) tipo -> . BOOLEAN
+    (16) tipo -> . STRING
+    (17) tipo -> . TIME
+    (18) tipo -> . MOMENT
 
-    IDENTIFICADOR   shift and go to state 67
-    LPAREN          shift and go to state 64
+    NATIVA          shift and go to state 15
+    BOOLEAN         shift and go to state 16
+    STRING          shift and go to state 17
+    TIME            shift and go to state 18
+    MOMENT          shift and go to state 19
 
-    condicion                      shift and go to state 65
-    expresion                      shift and go to state 66
+    lista_variables                shift and go to state 59
+    declaracion_variable           shift and go to state 60
+    tipo                           shift and go to state 14
 
 state 56
 
-    (14) declaracion_variable -> tipo IDENTIFICADOR IGUAL . valor
-    (20) valor -> . TRUE
-    (21) valor -> . FALSE
-    (22) valor -> . CADENA
-    (23) valor -> . valor_momento
-    (24) valor -> . CURRENT_TIME LPAREN RPAREN
-    (25) valor_momento -> . TIEMPO
+    (9) def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .
 
-    TRUE            shift and go to state 58
-    FALSE           shift and go to state 59
-    CADENA          shift and go to state 60
-    CURRENT_TIME    shift and go to state 62
-    TIEMPO          shift and go to state 63
+    CIERRE_LLAVE    reduce using rule 9 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    LOCK            reduce using rule 9 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    CLOCK           reduce using rule 9 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    ROUTINE         reduce using rule 9 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    NATIVA          reduce using rule 9 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    BOOLEAN         reduce using rule 9 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    STRING          reduce using rule 9 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    TIME            reduce using rule 9 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
+    MOMENT          reduce using rule 9 (def_clock -> CLOCK IDENTIFICADOR LPAREN RPAREN APERTURA_LLAVE bloque_estado CIERRE_LLAVE .)
 
-    valor                          shift and go to state 68
-    valor_momento                  shift and go to state 61
 
 state 57
 
-    (15) declaracion_nativa -> NATIVA IGUAL valor .
+    (27) def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when . CIERRE_LLAVE
 
-    NATIVA          reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
-    BOOLEAN         reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
-    STRING          reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
-    TIME            reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
-    MOMENT          reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
-    CIERRE_LLAVE    reduce using rule 15 (declaracion_nativa -> NATIVA IGUAL valor .)
+    CIERRE_LLAVE    shift and go to state 61
 
 
 state 58
 
-    (20) valor -> TRUE .
+    (28) clausula_when -> WHEN . DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia
 
-    NATIVA          reduce using rule 20 (valor -> TRUE .)
-    BOOLEAN         reduce using rule 20 (valor -> TRUE .)
-    STRING          reduce using rule 20 (valor -> TRUE .)
-    TIME            reduce using rule 20 (valor -> TRUE .)
-    MOMENT          reduce using rule 20 (valor -> TRUE .)
-    CIERRE_LLAVE    reduce using rule 20 (valor -> TRUE .)
+    DOS_PUNTOS      shift and go to state 62
 
 
 state 59
 
-    (21) valor -> FALSE .
+    (10) bloque_estado -> STATE DOS_PUNTOS lista_variables .
+    (11) lista_variables -> lista_variables . declaracion_variable
+    (13) declaracion_variable -> . tipo IDENTIFICADOR IGUAL valor
+    (14) declaracion_variable -> . NATIVA IGUAL valor
+    (15) tipo -> . BOOLEAN
+    (16) tipo -> . STRING
+    (17) tipo -> . TIME
+    (18) tipo -> . MOMENT
 
-    NATIVA          reduce using rule 21 (valor -> FALSE .)
-    BOOLEAN         reduce using rule 21 (valor -> FALSE .)
-    STRING          reduce using rule 21 (valor -> FALSE .)
-    TIME            reduce using rule 21 (valor -> FALSE .)
-    MOMENT          reduce using rule 21 (valor -> FALSE .)
-    CIERRE_LLAVE    reduce using rule 21 (valor -> FALSE .)
+    CIERRE_LLAVE    reduce using rule 10 (bloque_estado -> STATE DOS_PUNTOS lista_variables .)
+    NATIVA          shift and go to state 15
+    BOOLEAN         shift and go to state 16
+    STRING          shift and go to state 17
+    TIME            shift and go to state 18
+    MOMENT          shift and go to state 19
 
+    declaracion_variable           shift and go to state 63
+    tipo                           shift and go to state 14
 
 state 60
 
-    (22) valor -> CADENA .
+    (12) lista_variables -> declaracion_variable .
 
-    NATIVA          reduce using rule 22 (valor -> CADENA .)
-    BOOLEAN         reduce using rule 22 (valor -> CADENA .)
-    STRING          reduce using rule 22 (valor -> CADENA .)
-    TIME            reduce using rule 22 (valor -> CADENA .)
-    MOMENT          reduce using rule 22 (valor -> CADENA .)
-    CIERRE_LLAVE    reduce using rule 22 (valor -> CADENA .)
+    NATIVA          reduce using rule 12 (lista_variables -> declaracion_variable .)
+    BOOLEAN         reduce using rule 12 (lista_variables -> declaracion_variable .)
+    STRING          reduce using rule 12 (lista_variables -> declaracion_variable .)
+    TIME            reduce using rule 12 (lista_variables -> declaracion_variable .)
+    MOMENT          reduce using rule 12 (lista_variables -> declaracion_variable .)
+    CIERRE_LLAVE    reduce using rule 12 (lista_variables -> declaracion_variable .)
 
 
 state 61
 
-    (23) valor -> valor_momento .
+    (27) def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE .
 
-    NATIVA          reduce using rule 23 (valor -> valor_momento .)
-    BOOLEAN         reduce using rule 23 (valor -> valor_momento .)
-    STRING          reduce using rule 23 (valor -> valor_momento .)
-    TIME            reduce using rule 23 (valor -> valor_momento .)
-    MOMENT          reduce using rule 23 (valor -> valor_momento .)
-    CIERRE_LLAVE    reduce using rule 23 (valor -> valor_momento .)
+    CIERRE_LLAVE    reduce using rule 27 (def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE .)
+    ACTION          reduce using rule 27 (def_action -> ACTION IDENTIFICADOR APERTURA_LLAVE clausula_when CIERRE_LLAVE .)
 
 
 state 62
 
-    (24) valor -> CURRENT_TIME . LPAREN RPAREN
+    (28) clausula_when -> WHEN DOS_PUNTOS . LPAREN condicion RPAREN FLECHA consecuencia
 
-    LPAREN          shift and go to state 69
+    LPAREN          shift and go to state 64
 
 
 state 63
 
-    (25) valor_momento -> TIEMPO .
+    (11) lista_variables -> lista_variables declaracion_variable .
 
-    NATIVA          reduce using rule 25 (valor_momento -> TIEMPO .)
-    BOOLEAN         reduce using rule 25 (valor_momento -> TIEMPO .)
-    STRING          reduce using rule 25 (valor_momento -> TIEMPO .)
-    TIME            reduce using rule 25 (valor_momento -> TIEMPO .)
-    MOMENT          reduce using rule 25 (valor_momento -> TIEMPO .)
-    CIERRE_LLAVE    reduce using rule 25 (valor_momento -> TIEMPO .)
+    NATIVA          reduce using rule 11 (lista_variables -> lista_variables declaracion_variable .)
+    BOOLEAN         reduce using rule 11 (lista_variables -> lista_variables declaracion_variable .)
+    STRING          reduce using rule 11 (lista_variables -> lista_variables declaracion_variable .)
+    TIME            reduce using rule 11 (lista_variables -> lista_variables declaracion_variable .)
+    MOMENT          reduce using rule 11 (lista_variables -> lista_variables declaracion_variable .)
+    CIERRE_LLAVE    reduce using rule 11 (lista_variables -> lista_variables declaracion_variable .)
 
 
 state 64
 
-    (33) expresion -> LPAREN . IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
+    (28) clausula_when -> WHEN DOS_PUNTOS LPAREN . condicion RPAREN FLECHA consecuencia
+    (29) condicion -> . expresion opLOGICO expresion
+    (30) expresion -> . llamada_metodo
+    (31) expresion -> . acceso_miembro
+    (32) expresion -> . identificador_simple
+    (33) expresion -> . valor_literal
+    (41) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
+    (42) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> . expresion PUNTO NATIVA
+    (40) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
+    (34) identificador_simple -> . IDENTIFICADOR
+    (35) valor_literal -> . CADENA
+    (36) valor_literal -> . TRUE
+    (37) valor_literal -> . FALSE
+    (38) valor_literal -> . TIEMPO
 
-    IDENTIFICADOR   shift and go to state 70
+    LPAREN          shift and go to state 65
+    IDENTIFICADOR   shift and go to state 72
+    CADENA          shift and go to state 73
+    TRUE            shift and go to state 74
+    FALSE           shift and go to state 75
+    TIEMPO          shift and go to state 76
 
+    condicion                      shift and go to state 66
+    expresion                      shift and go to state 67
+    llamada_metodo                 shift and go to state 68
+    acceso_miembro                 shift and go to state 69
+    identificador_simple           shift and go to state 70
+    valor_literal                  shift and go to state 71
 
 state 65
 
-    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion . RPAREN FLECHA consecuencia
+    (42) llamada_metodo -> LPAREN . expresion RPAREN PUNTO CHECK LPAREN RPAREN
+    (30) expresion -> . llamada_metodo
+    (31) expresion -> . acceso_miembro
+    (32) expresion -> . identificador_simple
+    (33) expresion -> . valor_literal
+    (41) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
+    (42) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> . expresion PUNTO NATIVA
+    (40) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
+    (34) identificador_simple -> . IDENTIFICADOR
+    (35) valor_literal -> . CADENA
+    (36) valor_literal -> . TRUE
+    (37) valor_literal -> . FALSE
+    (38) valor_literal -> . TIEMPO
 
-    RPAREN          shift and go to state 71
+    LPAREN          shift and go to state 65
+    IDENTIFICADOR   shift and go to state 72
+    CADENA          shift and go to state 73
+    TRUE            shift and go to state 74
+    FALSE           shift and go to state 75
+    TIEMPO          shift and go to state 76
 
+    expresion                      shift and go to state 77
+    llamada_metodo                 shift and go to state 68
+    acceso_miembro                 shift and go to state 69
+    identificador_simple           shift and go to state 70
+    valor_literal                  shift and go to state 71
 
 state 66
 
-    (31) condicion -> expresion . opLOGICO expresion
+    (28) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion . RPAREN FLECHA consecuencia
 
-    opLOGICO        shift and go to state 72
+    RPAREN          shift and go to state 78
 
 
 state 67
 
-    (32) expresion -> IDENTIFICADOR . PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
+    (29) condicion -> expresion . opLOGICO expresion
+    (41) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> expresion . PUNTO NATIVA
+    (40) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
 
-    PUNTO           shift and go to state 73
+    opLOGICO        shift and go to state 79
+    PUNTO           shift and go to state 80
 
 
 state 68
 
-    (14) declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .
+    (30) expresion -> llamada_metodo .
 
-    NATIVA          reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
-    BOOLEAN         reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
-    STRING          reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
-    TIME            reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
-    MOMENT          reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
-    CIERRE_LLAVE    reduce using rule 14 (declaracion_variable -> tipo IDENTIFICADOR IGUAL valor .)
+    opLOGICO        reduce using rule 30 (expresion -> llamada_metodo .)
+    PUNTO           reduce using rule 30 (expresion -> llamada_metodo .)
+    RPAREN          reduce using rule 30 (expresion -> llamada_metodo .)
+    COMA            reduce using rule 30 (expresion -> llamada_metodo .)
+    CIERRE_LLAVE    reduce using rule 30 (expresion -> llamada_metodo .)
 
 
 state 69
 
-    (24) valor -> CURRENT_TIME LPAREN . RPAREN
+    (31) expresion -> acceso_miembro .
 
-    RPAREN          shift and go to state 74
+    opLOGICO        reduce using rule 31 (expresion -> acceso_miembro .)
+    PUNTO           reduce using rule 31 (expresion -> acceso_miembro .)
+    RPAREN          reduce using rule 31 (expresion -> acceso_miembro .)
+    COMA            reduce using rule 31 (expresion -> acceso_miembro .)
+    CIERRE_LLAVE    reduce using rule 31 (expresion -> acceso_miembro .)
 
 
 state 70
 
-    (33) expresion -> LPAREN IDENTIFICADOR . RPAREN PUNTO CHECK LPAREN RPAREN
+    (32) expresion -> identificador_simple .
 
-    RPAREN          shift and go to state 75
+    opLOGICO        reduce using rule 32 (expresion -> identificador_simple .)
+    PUNTO           reduce using rule 32 (expresion -> identificador_simple .)
+    RPAREN          reduce using rule 32 (expresion -> identificador_simple .)
+    COMA            reduce using rule 32 (expresion -> identificador_simple .)
+    CIERRE_LLAVE    reduce using rule 32 (expresion -> identificador_simple .)
 
 
 state 71
 
-    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN . FLECHA consecuencia
+    (33) expresion -> valor_literal .
 
-    FLECHA          shift and go to state 76
+    opLOGICO        reduce using rule 33 (expresion -> valor_literal .)
+    PUNTO           reduce using rule 33 (expresion -> valor_literal .)
+    RPAREN          reduce using rule 33 (expresion -> valor_literal .)
+    COMA            reduce using rule 33 (expresion -> valor_literal .)
+    CIERRE_LLAVE    reduce using rule 33 (expresion -> valor_literal .)
 
 
 state 72
 
-    (31) condicion -> expresion opLOGICO . expresion
-    (32) expresion -> . IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
-    (33) expresion -> . LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
+    (34) identificador_simple -> IDENTIFICADOR .
 
-    IDENTIFICADOR   shift and go to state 67
-    LPAREN          shift and go to state 64
+    opLOGICO        reduce using rule 34 (identificador_simple -> IDENTIFICADOR .)
+    PUNTO           reduce using rule 34 (identificador_simple -> IDENTIFICADOR .)
+    RPAREN          reduce using rule 34 (identificador_simple -> IDENTIFICADOR .)
+    COMA            reduce using rule 34 (identificador_simple -> IDENTIFICADOR .)
+    CIERRE_LLAVE    reduce using rule 34 (identificador_simple -> IDENTIFICADOR .)
 
-    expresion                      shift and go to state 77
 
 state 73
 
-    (32) expresion -> IDENTIFICADOR PUNTO . nombre_variable PUNTO CHECK LPAREN RPAREN
-    (34) nombre_variable -> . IDENTIFICADOR
-    (35) nombre_variable -> . NATIVA
+    (35) valor_literal -> CADENA .
 
-    IDENTIFICADOR   shift and go to state 78
-    NATIVA          shift and go to state 80
+    opLOGICO        reduce using rule 35 (valor_literal -> CADENA .)
+    PUNTO           reduce using rule 35 (valor_literal -> CADENA .)
+    RPAREN          reduce using rule 35 (valor_literal -> CADENA .)
+    COMA            reduce using rule 35 (valor_literal -> CADENA .)
+    CIERRE_LLAVE    reduce using rule 35 (valor_literal -> CADENA .)
 
-    nombre_variable                shift and go to state 79
 
 state 74
 
-    (24) valor -> CURRENT_TIME LPAREN RPAREN .
+    (36) valor_literal -> TRUE .
 
-    NATIVA          reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
-    BOOLEAN         reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
-    STRING          reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
-    TIME            reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
-    MOMENT          reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
-    CIERRE_LLAVE    reduce using rule 24 (valor -> CURRENT_TIME LPAREN RPAREN .)
+    opLOGICO        reduce using rule 36 (valor_literal -> TRUE .)
+    PUNTO           reduce using rule 36 (valor_literal -> TRUE .)
+    RPAREN          reduce using rule 36 (valor_literal -> TRUE .)
+    COMA            reduce using rule 36 (valor_literal -> TRUE .)
+    CIERRE_LLAVE    reduce using rule 36 (valor_literal -> TRUE .)
 
 
 state 75
 
-    (33) expresion -> LPAREN IDENTIFICADOR RPAREN . PUNTO CHECK LPAREN RPAREN
+    (37) valor_literal -> FALSE .
 
-    PUNTO           shift and go to state 81
+    opLOGICO        reduce using rule 37 (valor_literal -> FALSE .)
+    PUNTO           reduce using rule 37 (valor_literal -> FALSE .)
+    RPAREN          reduce using rule 37 (valor_literal -> FALSE .)
+    COMA            reduce using rule 37 (valor_literal -> FALSE .)
+    CIERRE_LLAVE    reduce using rule 37 (valor_literal -> FALSE .)
 
 
 state 76
 
-    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA . consecuencia
-    (36) consecuencia -> . llamada
-    (37) consecuencia -> . consecuencia COMA llamada
-    (38) llamada -> . SHOW LPAREN argumento_show RPAREN
-    (39) llamada -> . IDENTIFICADOR PUNTO IDENTIFICADOR
+    (38) valor_literal -> TIEMPO .
 
-    SHOW            shift and go to state 84
-    IDENTIFICADOR   shift and go to state 85
+    opLOGICO        reduce using rule 38 (valor_literal -> TIEMPO .)
+    PUNTO           reduce using rule 38 (valor_literal -> TIEMPO .)
+    RPAREN          reduce using rule 38 (valor_literal -> TIEMPO .)
+    COMA            reduce using rule 38 (valor_literal -> TIEMPO .)
+    CIERRE_LLAVE    reduce using rule 38 (valor_literal -> TIEMPO .)
 
-    consecuencia                   shift and go to state 82
-    llamada                        shift and go to state 83
 
 state 77
 
-    (31) condicion -> expresion opLOGICO expresion .
+    (42) llamada_metodo -> LPAREN expresion . RPAREN PUNTO CHECK LPAREN RPAREN
+    (41) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> expresion . PUNTO NATIVA
+    (40) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
 
-    RPAREN          reduce using rule 31 (condicion -> expresion opLOGICO expresion .)
+    RPAREN          shift and go to state 81
+    PUNTO           shift and go to state 80
 
 
 state 78
 
-    (34) nombre_variable -> IDENTIFICADOR .
+    (28) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN . FLECHA consecuencia
 
-    PUNTO           reduce using rule 34 (nombre_variable -> IDENTIFICADOR .)
+    FLECHA          shift and go to state 82
 
 
 state 79
 
-    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable . PUNTO CHECK LPAREN RPAREN
+    (29) condicion -> expresion opLOGICO . expresion
+    (30) expresion -> . llamada_metodo
+    (31) expresion -> . acceso_miembro
+    (32) expresion -> . identificador_simple
+    (33) expresion -> . valor_literal
+    (41) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
+    (42) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> . expresion PUNTO NATIVA
+    (40) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
+    (34) identificador_simple -> . IDENTIFICADOR
+    (35) valor_literal -> . CADENA
+    (36) valor_literal -> . TRUE
+    (37) valor_literal -> . FALSE
+    (38) valor_literal -> . TIEMPO
 
-    PUNTO           shift and go to state 86
+    LPAREN          shift and go to state 65
+    IDENTIFICADOR   shift and go to state 72
+    CADENA          shift and go to state 73
+    TRUE            shift and go to state 74
+    FALSE           shift and go to state 75
+    TIEMPO          shift and go to state 76
 
+    expresion                      shift and go to state 83
+    llamada_metodo                 shift and go to state 68
+    acceso_miembro                 shift and go to state 69
+    identificador_simple           shift and go to state 70
+    valor_literal                  shift and go to state 71
 
 state 80
 
-    (35) nombre_variable -> NATIVA .
+    (41) llamada_metodo -> expresion PUNTO . CHECK LPAREN RPAREN
+    (39) acceso_miembro -> expresion PUNTO . NATIVA
+    (40) acceso_miembro -> expresion PUNTO . IDENTIFICADOR
 
-    PUNTO           reduce using rule 35 (nombre_variable -> NATIVA .)
+    CHECK           shift and go to state 84
+    NATIVA          shift and go to state 85
+    IDENTIFICADOR   shift and go to state 86
 
 
 state 81
 
-    (33) expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO . CHECK LPAREN RPAREN
+    (42) llamada_metodo -> LPAREN expresion RPAREN . PUNTO CHECK LPAREN RPAREN
 
-    CHECK           shift and go to state 87
+    PUNTO           shift and go to state 87
 
 
 state 82
 
-    (30) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .
-    (37) consecuencia -> consecuencia . COMA llamada
+    (28) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA . consecuencia
+    (43) consecuencia -> . enunciado_accion
+    (44) consecuencia -> . consecuencia COMA enunciado_accion
+    (45) enunciado_accion -> . asignacion
+    (46) enunciado_accion -> . llamada_accion
+    (47) enunciado_accion -> . llamada_show
+    (48) asignacion -> . IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion
+    (49) asignacion -> . IDENTIFICADOR IGUAL expresion
+    (50) llamada_accion -> . IDENTIFICADOR PUNTO IDENTIFICADOR
+    (51) llamada_show -> . SHOW LPAREN expresion RPAREN
 
-    CIERRE_LLAVE    reduce using rule 30 (clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .)
-    COMA            shift and go to state 88
+    IDENTIFICADOR   shift and go to state 93
+    SHOW            shift and go to state 94
 
+    consecuencia                   shift and go to state 88
+    enunciado_accion               shift and go to state 89
+    asignacion                     shift and go to state 90
+    llamada_accion                 shift and go to state 91
+    llamada_show                   shift and go to state 92
 
 state 83
 
-    (36) consecuencia -> llamada .
+    (29) condicion -> expresion opLOGICO expresion .
+    (41) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> expresion . PUNTO NATIVA
+    (40) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
 
-    COMA            reduce using rule 36 (consecuencia -> llamada .)
-    CIERRE_LLAVE    reduce using rule 36 (consecuencia -> llamada .)
+    RPAREN          reduce using rule 29 (condicion -> expresion opLOGICO expresion .)
+    PUNTO           shift and go to state 80
 
 
 state 84
 
-    (38) llamada -> SHOW . LPAREN argumento_show RPAREN
+    (41) llamada_metodo -> expresion PUNTO CHECK . LPAREN RPAREN
 
-    LPAREN          shift and go to state 89
+    LPAREN          shift and go to state 95
 
 
 state 85
 
-    (39) llamada -> IDENTIFICADOR . PUNTO IDENTIFICADOR
+    (39) acceso_miembro -> expresion PUNTO NATIVA .
 
-    PUNTO           shift and go to state 90
+    opLOGICO        reduce using rule 39 (acceso_miembro -> expresion PUNTO NATIVA .)
+    PUNTO           reduce using rule 39 (acceso_miembro -> expresion PUNTO NATIVA .)
+    RPAREN          reduce using rule 39 (acceso_miembro -> expresion PUNTO NATIVA .)
+    COMA            reduce using rule 39 (acceso_miembro -> expresion PUNTO NATIVA .)
+    CIERRE_LLAVE    reduce using rule 39 (acceso_miembro -> expresion PUNTO NATIVA .)
 
 
 state 86
 
-    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO . CHECK LPAREN RPAREN
+    (40) acceso_miembro -> expresion PUNTO IDENTIFICADOR .
 
-    CHECK           shift and go to state 91
+    opLOGICO        reduce using rule 40 (acceso_miembro -> expresion PUNTO IDENTIFICADOR .)
+    PUNTO           reduce using rule 40 (acceso_miembro -> expresion PUNTO IDENTIFICADOR .)
+    RPAREN          reduce using rule 40 (acceso_miembro -> expresion PUNTO IDENTIFICADOR .)
+    COMA            reduce using rule 40 (acceso_miembro -> expresion PUNTO IDENTIFICADOR .)
+    CIERRE_LLAVE    reduce using rule 40 (acceso_miembro -> expresion PUNTO IDENTIFICADOR .)
 
 
 state 87
 
-    (33) expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK . LPAREN RPAREN
+    (42) llamada_metodo -> LPAREN expresion RPAREN PUNTO . CHECK LPAREN RPAREN
 
-    LPAREN          shift and go to state 92
+    CHECK           shift and go to state 96
 
 
 state 88
 
-    (37) consecuencia -> consecuencia COMA . llamada
-    (38) llamada -> . SHOW LPAREN argumento_show RPAREN
-    (39) llamada -> . IDENTIFICADOR PUNTO IDENTIFICADOR
+    (28) clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .
+    (44) consecuencia -> consecuencia . COMA enunciado_accion
 
-    SHOW            shift and go to state 84
-    IDENTIFICADOR   shift and go to state 85
+    CIERRE_LLAVE    reduce using rule 28 (clausula_when -> WHEN DOS_PUNTOS LPAREN condicion RPAREN FLECHA consecuencia .)
+    COMA            shift and go to state 97
 
-    llamada                        shift and go to state 93
 
 state 89
 
-    (38) llamada -> SHOW LPAREN . argumento_show RPAREN
-    (40) argumento_show -> . CADENA
-    (41) argumento_show -> . expresion
-    (32) expresion -> . IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN
-    (33) expresion -> . LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN
+    (43) consecuencia -> enunciado_accion .
 
-    CADENA          shift and go to state 95
-    IDENTIFICADOR   shift and go to state 67
-    LPAREN          shift and go to state 64
+    COMA            reduce using rule 43 (consecuencia -> enunciado_accion .)
+    CIERRE_LLAVE    reduce using rule 43 (consecuencia -> enunciado_accion .)
 
-    argumento_show                 shift and go to state 94
-    expresion                      shift and go to state 96
 
 state 90
 
-    (39) llamada -> IDENTIFICADOR PUNTO . IDENTIFICADOR
+    (45) enunciado_accion -> asignacion .
 
-    IDENTIFICADOR   shift and go to state 97
+    COMA            reduce using rule 45 (enunciado_accion -> asignacion .)
+    CIERRE_LLAVE    reduce using rule 45 (enunciado_accion -> asignacion .)
 
 
 state 91
 
-    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK . LPAREN RPAREN
+    (46) enunciado_accion -> llamada_accion .
 
-    LPAREN          shift and go to state 98
+    COMA            reduce using rule 46 (enunciado_accion -> llamada_accion .)
+    CIERRE_LLAVE    reduce using rule 46 (enunciado_accion -> llamada_accion .)
 
 
 state 92
 
-    (33) expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN . RPAREN
+    (47) enunciado_accion -> llamada_show .
 
-    RPAREN          shift and go to state 99
+    COMA            reduce using rule 47 (enunciado_accion -> llamada_show .)
+    CIERRE_LLAVE    reduce using rule 47 (enunciado_accion -> llamada_show .)
 
 
 state 93
 
-    (37) consecuencia -> consecuencia COMA llamada .
+    (48) asignacion -> IDENTIFICADOR . PUNTO IDENTIFICADOR IGUAL expresion
+    (49) asignacion -> IDENTIFICADOR . IGUAL expresion
+    (50) llamada_accion -> IDENTIFICADOR . PUNTO IDENTIFICADOR
 
-    COMA            reduce using rule 37 (consecuencia -> consecuencia COMA llamada .)
-    CIERRE_LLAVE    reduce using rule 37 (consecuencia -> consecuencia COMA llamada .)
+    PUNTO           shift and go to state 98
+    IGUAL           shift and go to state 99
 
 
 state 94
 
-    (38) llamada -> SHOW LPAREN argumento_show . RPAREN
+    (51) llamada_show -> SHOW . LPAREN expresion RPAREN
 
-    RPAREN          shift and go to state 100
+    LPAREN          shift and go to state 100
 
 
 state 95
 
-    (40) argumento_show -> CADENA .
-
-    RPAREN          reduce using rule 40 (argumento_show -> CADENA .)
-
-
-state 96
-
-    (41) argumento_show -> expresion .
-
-    RPAREN          reduce using rule 41 (argumento_show -> expresion .)
-
-
-state 97
-
-    (39) llamada -> IDENTIFICADOR PUNTO IDENTIFICADOR .
-
-    COMA            reduce using rule 39 (llamada -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
-    CIERRE_LLAVE    reduce using rule 39 (llamada -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
-
-
-state 98
-
-    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN . RPAREN
+    (41) llamada_metodo -> expresion PUNTO CHECK LPAREN . RPAREN
 
     RPAREN          shift and go to state 101
 
 
+state 96
+
+    (42) llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK . LPAREN RPAREN
+
+    LPAREN          shift and go to state 102
+
+
+state 97
+
+    (44) consecuencia -> consecuencia COMA . enunciado_accion
+    (45) enunciado_accion -> . asignacion
+    (46) enunciado_accion -> . llamada_accion
+    (47) enunciado_accion -> . llamada_show
+    (48) asignacion -> . IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion
+    (49) asignacion -> . IDENTIFICADOR IGUAL expresion
+    (50) llamada_accion -> . IDENTIFICADOR PUNTO IDENTIFICADOR
+    (51) llamada_show -> . SHOW LPAREN expresion RPAREN
+
+    IDENTIFICADOR   shift and go to state 93
+    SHOW            shift and go to state 94
+
+    enunciado_accion               shift and go to state 103
+    asignacion                     shift and go to state 90
+    llamada_accion                 shift and go to state 91
+    llamada_show                   shift and go to state 92
+
+state 98
+
+    (48) asignacion -> IDENTIFICADOR PUNTO . IDENTIFICADOR IGUAL expresion
+    (50) llamada_accion -> IDENTIFICADOR PUNTO . IDENTIFICADOR
+
+    IDENTIFICADOR   shift and go to state 104
+
+
 state 99
 
-    (33) expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN .
+    (49) asignacion -> IDENTIFICADOR IGUAL . expresion
+    (30) expresion -> . llamada_metodo
+    (31) expresion -> . acceso_miembro
+    (32) expresion -> . identificador_simple
+    (33) expresion -> . valor_literal
+    (41) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
+    (42) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> . expresion PUNTO NATIVA
+    (40) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
+    (34) identificador_simple -> . IDENTIFICADOR
+    (35) valor_literal -> . CADENA
+    (36) valor_literal -> . TRUE
+    (37) valor_literal -> . FALSE
+    (38) valor_literal -> . TIEMPO
 
-    opLOGICO        reduce using rule 33 (expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN .)
-    RPAREN          reduce using rule 33 (expresion -> LPAREN IDENTIFICADOR RPAREN PUNTO CHECK LPAREN RPAREN .)
+    LPAREN          shift and go to state 65
+    IDENTIFICADOR   shift and go to state 72
+    CADENA          shift and go to state 73
+    TRUE            shift and go to state 74
+    FALSE           shift and go to state 75
+    TIEMPO          shift and go to state 76
 
+    expresion                      shift and go to state 105
+    llamada_metodo                 shift and go to state 68
+    acceso_miembro                 shift and go to state 69
+    identificador_simple           shift and go to state 70
+    valor_literal                  shift and go to state 71
 
 state 100
 
-    (38) llamada -> SHOW LPAREN argumento_show RPAREN .
+    (51) llamada_show -> SHOW LPAREN . expresion RPAREN
+    (30) expresion -> . llamada_metodo
+    (31) expresion -> . acceso_miembro
+    (32) expresion -> . identificador_simple
+    (33) expresion -> . valor_literal
+    (41) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
+    (42) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> . expresion PUNTO NATIVA
+    (40) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
+    (34) identificador_simple -> . IDENTIFICADOR
+    (35) valor_literal -> . CADENA
+    (36) valor_literal -> . TRUE
+    (37) valor_literal -> . FALSE
+    (38) valor_literal -> . TIEMPO
 
-    COMA            reduce using rule 38 (llamada -> SHOW LPAREN argumento_show RPAREN .)
-    CIERRE_LLAVE    reduce using rule 38 (llamada -> SHOW LPAREN argumento_show RPAREN .)
+    LPAREN          shift and go to state 65
+    IDENTIFICADOR   shift and go to state 72
+    CADENA          shift and go to state 73
+    TRUE            shift and go to state 74
+    FALSE           shift and go to state 75
+    TIEMPO          shift and go to state 76
 
+    expresion                      shift and go to state 106
+    llamada_metodo                 shift and go to state 68
+    acceso_miembro                 shift and go to state 69
+    identificador_simple           shift and go to state 70
+    valor_literal                  shift and go to state 71
 
 state 101
 
-    (32) expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN .
+    (41) llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN .
 
-    opLOGICO        reduce using rule 32 (expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN .)
-    RPAREN          reduce using rule 32 (expresion -> IDENTIFICADOR PUNTO nombre_variable PUNTO CHECK LPAREN RPAREN .)
+    opLOGICO        reduce using rule 41 (llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN .)
+    PUNTO           reduce using rule 41 (llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN .)
+    RPAREN          reduce using rule 41 (llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN .)
+    COMA            reduce using rule 41 (llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN .)
+    CIERRE_LLAVE    reduce using rule 41 (llamada_metodo -> expresion PUNTO CHECK LPAREN RPAREN .)
+
+
+state 102
+
+    (42) llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN . RPAREN
+
+    RPAREN          shift and go to state 107
+
+
+state 103
+
+    (44) consecuencia -> consecuencia COMA enunciado_accion .
+
+    COMA            reduce using rule 44 (consecuencia -> consecuencia COMA enunciado_accion .)
+    CIERRE_LLAVE    reduce using rule 44 (consecuencia -> consecuencia COMA enunciado_accion .)
+
+
+state 104
+
+    (48) asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR . IGUAL expresion
+    (50) llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR .
+
+    IGUAL           shift and go to state 108
+    COMA            reduce using rule 50 (llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
+    CIERRE_LLAVE    reduce using rule 50 (llamada_accion -> IDENTIFICADOR PUNTO IDENTIFICADOR .)
+
+
+state 105
+
+    (49) asignacion -> IDENTIFICADOR IGUAL expresion .
+    (41) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> expresion . PUNTO NATIVA
+    (40) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
+
+    COMA            reduce using rule 49 (asignacion -> IDENTIFICADOR IGUAL expresion .)
+    CIERRE_LLAVE    reduce using rule 49 (asignacion -> IDENTIFICADOR IGUAL expresion .)
+    PUNTO           shift and go to state 80
+
+
+state 106
+
+    (51) llamada_show -> SHOW LPAREN expresion . RPAREN
+    (41) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> expresion . PUNTO NATIVA
+    (40) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
+
+    RPAREN          shift and go to state 109
+    PUNTO           shift and go to state 80
+
+
+state 107
+
+    (42) llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .
+
+    opLOGICO        reduce using rule 42 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
+    PUNTO           reduce using rule 42 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
+    RPAREN          reduce using rule 42 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
+    COMA            reduce using rule 42 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
+    CIERRE_LLAVE    reduce using rule 42 (llamada_metodo -> LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN .)
+
+
+state 108
+
+    (48) asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL . expresion
+    (30) expresion -> . llamada_metodo
+    (31) expresion -> . acceso_miembro
+    (32) expresion -> . identificador_simple
+    (33) expresion -> . valor_literal
+    (41) llamada_metodo -> . expresion PUNTO CHECK LPAREN RPAREN
+    (42) llamada_metodo -> . LPAREN expresion RPAREN PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> . expresion PUNTO NATIVA
+    (40) acceso_miembro -> . expresion PUNTO IDENTIFICADOR
+    (34) identificador_simple -> . IDENTIFICADOR
+    (35) valor_literal -> . CADENA
+    (36) valor_literal -> . TRUE
+    (37) valor_literal -> . FALSE
+    (38) valor_literal -> . TIEMPO
+
+    LPAREN          shift and go to state 65
+    IDENTIFICADOR   shift and go to state 72
+    CADENA          shift and go to state 73
+    TRUE            shift and go to state 74
+    FALSE           shift and go to state 75
+    TIEMPO          shift and go to state 76
+
+    expresion                      shift and go to state 110
+    llamada_metodo                 shift and go to state 68
+    acceso_miembro                 shift and go to state 69
+    identificador_simple           shift and go to state 70
+    valor_literal                  shift and go to state 71
+
+state 109
+
+    (51) llamada_show -> SHOW LPAREN expresion RPAREN .
+
+    COMA            reduce using rule 51 (llamada_show -> SHOW LPAREN expresion RPAREN .)
+    CIERRE_LLAVE    reduce using rule 51 (llamada_show -> SHOW LPAREN expresion RPAREN .)
+
+
+state 110
+
+    (48) asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion .
+    (41) llamada_metodo -> expresion . PUNTO CHECK LPAREN RPAREN
+    (39) acceso_miembro -> expresion . PUNTO NATIVA
+    (40) acceso_miembro -> expresion . PUNTO IDENTIFICADOR
+
+    COMA            reduce using rule 48 (asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion .)
+    CIERRE_LLAVE    reduce using rule 48 (asignacion -> IDENTIFICADOR PUNTO IDENTIFICADOR IGUAL expresion .)
+    PUNTO           shift and go to state 80
 
