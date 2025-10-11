@@ -1,5 +1,3 @@
-# semantico.py (Versión Final y Corregida)
-
 import re
 
 class Symbol:
@@ -23,7 +21,6 @@ class SymbolTable:
         self.symbols[scope_key][symbol.name] = symbol
         return None
 
-    # --- NUEVA FUNCIÓN 'PEEK' ---
     def peek(self, name, scope):
         """Busca un símbolo SIN marcarlo como usado (para la Pasada 1)."""
         if scope in self.symbols and name in self.symbols[scope]:
@@ -62,7 +59,7 @@ class SemanticAnalyzer:
         self.predefined_natives = {'TIME': 'time', 'PASS': 'string'}
         self.predefined_actions = {
             'lock': ['force_lock', 'force_unlock'],
-            'clock': [],
+            'clock': ['current_time'],
         }
 
     def _format_diagnostic(self, identifier, line_num, message):
@@ -96,7 +93,6 @@ class SemanticAnalyzer:
     def _check_for_unused_symbols(self):
         for scope_name, symbols in self.symbol_table.symbols.items():
             for symbol_name, symbol in symbols.items():
-                # --- CORRECCIÓN: IGNORAR 'routine' ---
                 if symbol.type in ['program', 'action', 'routine']: continue
                 
                 if not symbol.used:
@@ -161,23 +157,38 @@ class SemanticAnalyzer:
 
     def visit_variable_declaration(self, node, scope, pass_num):
         if pass_num != 1: return
-        var_type, var_name, _, line_num = node[1], node[2], node[3], node[4]
-        final_type = var_type
+
+        var_type, var_name, value_node, line_num = node[1], node[2], node[3], node[4]
+        
+        # Este es el tipo que el programador escribió (ej. 'number')
+        declared_type = var_type
         if var_type == 'native':
-            if var_name in self.predefined_natives: final_type = self.predefined_natives[var_name]
+            if var_name in self.predefined_natives:
+                declared_type = self.predefined_natives[var_name]
             else:
                 err = f"La variable nativa '${var_name}' no está predefinida."
                 self.errors.append(self._format_diagnostic(var_name, line_num, err))
-                final_type = 'error'
+                declared_type = 'error'
+
+        if declared_type != 'error':
+            # Obtenemos el tipo del valor a la derecha del '='
+            value_type = self.get_expression_type(value_node, scope)
+            
+            # Comparamos el tipo declarado con el tipo del valor
+            if value_type != 'error' and not self._types_are_compatible(declared_type, value_type):
+                err = f"No se puede asignar un valor de tipo '{value_type}' a la variable '{var_name}' declarada como '{declared_type}'."
+                self.errors.append(self._format_diagnostic(var_name, line_num, err))
+
+        # El símbolo se sigue creando en la tabla para que el análisis pueda continuar
         if scope == 'global':
-            symbol = Symbol(var_name, final_type, 'global', line_num)
+            symbol = Symbol(var_name, declared_type, 'global', line_num)
             err = self.symbol_table.define(symbol)
             if err: self.errors.append(self._format_diagnostic(var_name, line_num, err))
         else:
-            member_symbol = Symbol(var_name, final_type, scope, line_num)
-            # --- CAMBIO IMPORTANTE: Usamos 'peek' en la Pasada 1 ---
+            member_symbol = Symbol(var_name, declared_type, scope, line_num)
             parent_symbol = self.symbol_table.peek(scope, 'global')
-            if parent_symbol: parent_symbol.members[var_name] = member_symbol
+            if parent_symbol:
+                parent_symbol.members[var_name] = member_symbol
             else:
                 err = f"Error interno: No se encontró el objeto padre '{scope}'."
                 self.errors.append(self._format_diagnostic(var_name, line_num, err))
@@ -268,7 +279,14 @@ class SemanticAnalyzer:
             if expr_type != 'error' and not self._types_are_compatible(member_type, expr_type):
                 var_name = member_access_node[2]
                 err = f"No se puede asignar '{expr_type}' a la variable '{var_name.lstrip('$')}' de tipo '{member_type}'."
-                line_num = self._find_line_of_usage(var_name)
+                obj_name = member_access_node[1][1]
+                line_num = 0
+                search_pattern = r'\b' + re.escape(obj_name) + r'\s*\.\s*' + re.escape(var_name) + r'\s*='
+                for i, line in enumerate(self.source_lines):
+                    if re.search(search_pattern, line):
+                         line_num = i + 1
+                         break
+                
                 self.errors.append(self._format_diagnostic(var_name, line_num, err))
                 return 'error'
             return 'member_assignment'
