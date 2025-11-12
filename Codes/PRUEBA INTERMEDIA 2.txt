@@ -1,4 +1,6 @@
 program SmartHome {
+	string no_usado = "NO ME USASTE"
+
    lock front_door() {
       state:
           boolean is_locked = true
@@ -29,6 +31,7 @@ program SmartHome {
       }
    }
 }
+
 
 
 
