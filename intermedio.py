@@ -36,9 +36,6 @@ class Intermedio:
         self.visitar_programa(self.ast)
         return self.codigo_intermedio
 
-    # --- MÉTODO EXPORTAR_A_CSV ELIMINADO ---
-    # La GUI se encargará de esto.
-
     # --- Métodos de Visita para la Generación de C3D ---
 
     def visitar(self, node):
@@ -91,10 +88,19 @@ class Intermedio:
     def visitar_action_declaration(self, node):
         self.visitar(node[2])
 
+ # CONDICIONALES WHEN
     def visitar_when_clause(self, node):
         condition_node = node[1]
         actions = node[2]
         
+        if self._es_condicion_de_tiempo(condition_node):
+            # Si la condición usa 'main_clock.TIME', es una espera de tiempo.
+            self.emitir('WAIT_TICK', '1s', '', '') # Espera 1 segundo
+        else:
+            # Si no, asumimos que es una espera de entrada.
+            # (Una mejora sería identificar la variable de entrada específica TENTATIVO)
+            self.emitir('WAIT_INPUT', '', '', '') # Espera por una entrada externa
+
         condition_location = self.visitar_expresion(condition_node)
         
         label_then = self.nueva_etiqueta()
@@ -111,6 +117,30 @@ class Intermedio:
             
         self.emitir('LABEL', '', '', label_end)
     
+# WHEN TIPO "TIEMPO"
+    def _es_condicion_de_tiempo(self, nodo_condicion):
+        """
+        Función auxiliar recursiva para determinar si una condición
+        """
+        if not isinstance(nodo_condicion, (list, tuple)):
+            return False
+        
+        # Caso base: ('member_access', ('identifier', 'main_clock', ...), '$TIME', ...)
+        if nodo_condicion[0] == 'member_access':
+            obj_name = nodo_condicion[1][1]
+            member_name = nodo_condicion[2]
+            if obj_name == 'main_clock' and member_name == '$TIME':
+                return True
+        
+        # Búsqueda recursiva en los hijos del nodo
+        for hijo in nodo_condicion[1:]:
+            if self._es_condicion_de_tiempo(hijo):
+                return True
+        return False
+
+# WHEN TIPO "ENTRADA"
+
+
     def visitar_expresion(self, node):
         if not isinstance(node, (tuple, list)):
             if node == 'true' or node == 'false': return node
@@ -126,7 +156,6 @@ class Intermedio:
             right_loc = self.visitar_expresion(right_node)
             
             result_temp = self.nueva_temporal()
-            # --- CORRECCIÓN ---
             self.emitir(op, left_loc, right_loc, result_temp) # Antes decía selfum.emitir
             return result_temp
         
@@ -169,3 +198,4 @@ class Intermedio:
             return result_temp
             
         return 'unknown'
+    
