@@ -1,10 +1,12 @@
 import os
+import csv
 import tkinter as tk
 from tkinter import font, filedialog, scrolledtext, ttk, messagebox
 import lexico as ANLX
 import sintactico as ANSX
 import arbolSintaxis as ARSX
 import semantico as ANSM 
+import intermedio as GNCI
 
 try:
     from graphviz import Source
@@ -79,6 +81,7 @@ class CompilerGUI:
         
         self.current_filepath = None #guardar los nombres de los archivos para copiar su nombre en otras exportaciones
         self.syntax_tree = None #
+        self.intermediate_code_generator = None # Para guardar el objeto generador
 
         # Fuente base
         self.text_font = font.Font(family="Consolas", size=12)
@@ -98,6 +101,7 @@ class CompilerGUI:
         tools_menu.add_command(label="Compilar", command=self.compilar)
         tools_menu.add_command(label="Ver Tokens", command=self.ver_tokens)
         tools_menu.add_command(label="Ver Árbol Sintáctico", command=self.ver_arbol)
+        tools_menu.add_command(label="Exportar C. Intermedio (CSV)", command=self.exportar_intermedio)
 
         # --- PanedWindow como contenedor principal ---
         main_pane = tk.PanedWindow(self.root, orient=tk.VERTICAL, sashrelief=tk.RAISED, sashwidth=4, bg=self.colors["background"])
@@ -245,9 +249,9 @@ class CompilerGUI:
             self.console_area.config(state=tk.DISABLED)
             return
 
-        # ==========================================================
-        # FASE 1: ANÁLISIS LÉXICO
-        # ==========================================================
+    # ==========================================================
+    # FASE 1: ANÁLISIS LÉXICO
+    # ==========================================================
         # Aquí se leen los tokens y se registran en la tabla
         # Los tokens que no coincidan con ninguna ER los designa como ERROR
         self.console_area.insert(tk.END, "--- Iniciando Fase 1: Análisis Léxico ---\n", 'info')
@@ -265,9 +269,9 @@ class CompilerGUI:
         else:
             self.console_area.insert(tk.END, "Análisis léxico completado. Sin errores.\n\n", 'success')
 
-        # ==========================================================
-        # FASE 2: ANÁLISIS SINTÁCTICO
-        # ==========================================================
+    # ==========================================================
+    # FASE 2: ANÁLISIS SINTÁCTICO
+    # ==========================================================
         # Obtiene todos los tokens de la fase anterior
         # Compara las sentencias en el código con estructuras sintácticas declaradas aquí
         # Al final de esta fase llama a la clase encargada de dibujar el árbol sintáctico
@@ -291,17 +295,17 @@ class CompilerGUI:
 
         # En Compilador.py, dentro de compilar, en la FASE 3
 
-# ==========================================================
-# FASE 3: ANÁLISIS SEMÁNTICO
-# ==========================================================
+    # ==========================================================
+    # FASE 3: ANÁLISIS SEMÁNTICO
+    # ==========================================================
         # Obtiene el árbol sintáctico de la ejecución anterior
         # Realiza 2 recorridos
             # 1.- identifica la jerarquía de las variables y sus referencias
             # 2.- busca si las variables fueron usadas en alguna función o si las que se usan tienen una referencia
         # También evalúa coincidencias de tipos de dato en operaciones lógicas 
         self.console_area.insert(tk.END, "--- Iniciando Fase 3: Análisis Semántico ---\n", 'info')
-        # --- Pasamos el código fuente como argumento ---
         resultados_semanticos = ANSM.analisis_semantico(self.syntax_tree, codigo)
+        self.symbol_table = resultados_semanticos.get('symbol_table', None)
 
         errores = resultados_semanticos.get('errors', [])
         warnings = resultados_semanticos.get('warnings', [])
@@ -328,7 +332,87 @@ class CompilerGUI:
                         f"     {warn['pointer']}\n"
                 self.console_area.insert(tk.END, warn_msg, 'warning')
 
-        self.console_area.config(state=tk.DISABLED)
+    # ==========================================================
+    # FASE 4: GENERACIÓN DE CÓDIGO INTERMEDIO
+    # ==========================================================
+        # Esta fase solo se ejecuta si las fases 1, 2 y 3 pasaron
+        self.console_area.insert(tk.END, "\n--- Iniciando Fase 4: Generación de Código Intermedio ---\n", 'info')
+        try:
+            # 1. Crear el generador y guardarlo en la instancia
+            self.intermediate_code_generator = GNCI.Intermedio(self.syntax_tree, self.symbol_table)
+            
+            # 2. Generar el código (la lista de cuádruplos)
+            intermediate_code_list = self.intermediate_code_generator.generar()
+
+            # 3. Mostrar el resultado en la consola
+            self.console_area.insert(tk.END, f"Generación de C3D completada. {len(intermediate_code_list)} cuádruplos generados.\n", 'success')
+            
+            # Opcional: imprimir los cuádruplos en la consola
+            # for i, quad in enumerate(intermediate_code_list):
+            #     self.console_area.insert(tk.END, f"  ({i:03}): {quad}\n")
+            
+            self.console_area.insert(tk.END, "\n¡Compilación finalizada con éxito!\n", 'success')
+            self.console_area.insert(tk.END, "Puede exportar el Código Intermedio desde 'Herramientas'.\n", 'info')
+
+
+        except Exception as e:
+            self.console_area.insert(tk.END, f"Fase de GCI fallida. Error: {e}\n", 'error')
+            self.intermediate_code_generator = None # Asegurarse que es None si falla
+
+        self.console_area.config(state=tk.DISABLED) # Movimos el bloque de semantico hasta aquí, la nueva fase 4
+
+#================================================================================================== FUNCIONES DE EXPORTACIÓN
+    def exportar_intermedio(self):
+        """
+        Exporta el código intermedio (C3D) a un archivo CSV.
+        """
+        # 1. Verificar si el generador existe y tiene código
+        if not hasattr(self, 'intermediate_code_generator') or self.intermediate_code_generator is None:
+            messagebox.showerror("Exportar Fallido", 
+                                 "Debes 'Compilar' el código exitosamente (incluyendo Fase 4) primero.")
+            return
+        
+        codigo_intermedio = self.intermediate_code_generator.codigo_intermedio
+        
+        if not codigo_intermedio:
+            messagebox.showinfo("Exportar Fallido", "No se generó código intermedio (lista vacía).")
+            return
+
+        # 2. Determinar el nombre del archivo de salida
+        output_base_name = "codigo_intermedio"
+        if self.current_filepath:
+            base = os.path.basename(self.current_filepath)
+            output_base_name = os.path.splitext(base)[0]
+        
+        directorio_salida = "CIs"
+        os.makedirs(directorio_salida, exist_ok=True)
+        nombre_archivo = os.path.join(directorio_salida, f"{output_base_name}_C3D.csv")
+
+        # 3. Lógica para escribir el archivo CSV
+        encabezado = ['#', 'Operador', 'Argumento 1', 'Argumento 2', 'Resultado']
+        
+        try:
+            with open(nombre_archivo, 'w', newline='', encoding='utf-8') as archivo_csv:
+                escritor = csv.writer(archivo_csv, delimiter=',')
+                escritor.writerow(encabezado)
+                
+                for i, cuadruplo in enumerate(codigo_intermedio):
+                    fila = [i] + list(cuadruplo)
+                    escritor.writerow(fila)
+            
+            messagebox.showinfo("Exportación Exitosa", f"Código Intermedio (C3D) guardado en:\n{nombre_archivo}")
+            
+            # Registrar en la consola
+            self.console_area.config(state=tk.NORMAL)
+            self.console_area.insert(tk.END, f"\n[INFO] Código Intermedio exportado a '{nombre_archivo}'.\n", 'info')
+            self.console_area.config(state=tk.DISABLED)
+
+        except Exception as e:
+            messagebox.showerror("Error de Exportación", f"No se pudo guardar el archivo CSV.\nError: {e}")
+            # Registrar en la consola
+            self.console_area.config(state=tk.NORMAL)
+            self.console_area.insert(tk.END, f"\n[ERROR] Falló la exportación de C3D: {e}\n", 'error')
+            self.console_area.config(state=tk.DISABLED)
 
     # ... (La función ver_tokens y las otras permanecen igual) ...
     def ver_tokens(self):
@@ -349,10 +433,10 @@ class CompilerGUI:
         scrollbar = ttk.Scrollbar(frame, style="Modern.Vertical.TScrollbar")
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Treeview (CORRECCIÓN 1: El padre ahora es 'frame')
+        # Treeview
         columns = ('Valor', 'Tipo', 'Línea', 'Columna')
         tree = ttk.Treeview(frame, columns=columns, show='headings', 
-                            yscrollcommand=scrollbar.set) # <-- El padre es 'frame'
+                            yscrollcommand=scrollbar.set)
         
         # Se empaqueta a la izquierda del frame
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True) 

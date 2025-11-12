@@ -333,5 +333,21 @@ def analisis_semantico(ast, source_code):
     if not ast:
         return {'errors': [{"message": "No se pudo generar el árbol sintáctico.", "line": 0, "content": "", "pointer": ""}], 'warnings': []}
     
-    analyzer = SemanticAnalyzer(ast, source_code)
-    return analyzer.analyze()
+    # 1. Creas una instancia del analizador. 
+    #    En este momento, se crea una tabla de símbolos vacía dentro de él.
+    #    (self.symbol_table = SymbolTable())
+    analyzer = SemanticAnalyzer(ast, source_code) 
+    
+    # 2. Llamas a analyzer.analyze(). Este método recorre todo el árbol
+    #    y LLENA la tabla de símbolos (analyzer.symbol_table) con información.
+    #    Al final, devuelve un diccionario solo con errores y advertencias.
+    resultados = analyzer.analyze() 
+    
+    # 3. ESTA ES LA LÍNEA MÁS IMPORTANTE:
+    #    Tomas la tabla de símbolos, que ya está llena, desde el 'analyzer'
+    #    y la AÑADES al diccionario de 'resultados'.
+    resultados['symbol_table'] = analyzer.symbol_table
+    
+    # 4. Devuelves el diccionario completo, que ahora contiene:
+    #    {'errors': [...], 'warnings': [...], 'symbol_table': <el objeto SymbolTable lleno>}
+    return resultados
