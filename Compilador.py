@@ -248,6 +248,8 @@ class CompilerGUI:
         # ==========================================================
         # FASE 1: ANÁLISIS LÉXICO
         # ==========================================================
+        # Aquí se leen los tokens y se registran en la tabla
+        # Los tokens que no coincidan con ninguna ER los designa como ERROR
         self.console_area.insert(tk.END, "--- Iniciando Fase 1: Análisis Léxico ---\n", 'info')
         ANLX.analisis(codigo)
         self.tokens_identificados = ANLX.tokens_identificados
@@ -266,6 +268,9 @@ class CompilerGUI:
         # ==========================================================
         # FASE 2: ANÁLISIS SINTÁCTICO
         # ==========================================================
+        # Obtiene todos los tokens de la fase anterior
+        # Compara las sentencias en el código con estructuras sintácticas declaradas aquí
+        # Al final de esta fase llama a la clase encargada de dibujar el árbol sintáctico
         self.console_area.insert(tk.END, "--- Iniciando Fase 2: Análisis Sintáctico ---\n", 'info')
         ANSX.limpiar_errores_sintacticos()
         ANLX.lexer.lineno = 1
@@ -289,6 +294,11 @@ class CompilerGUI:
 # ==========================================================
 # FASE 3: ANÁLISIS SEMÁNTICO
 # ==========================================================
+        # Obtiene el árbol sintáctico de la ejecución anterior
+        # Realiza 2 recorridos
+            # 1.- identifica la jerarquía de las variables y sus referencias
+            # 2.- busca si las variables fueron usadas en alguna función o si las que se usan tienen una referencia
+        # También evalúa coincidencias de tipos de dato en operaciones lógicas 
         self.console_area.insert(tk.END, "--- Iniciando Fase 3: Análisis Semántico ---\n", 'info')
         # --- Pasamos el código fuente como argumento ---
         resultados_semanticos = ANSM.analisis_semantico(self.syntax_tree, codigo)
