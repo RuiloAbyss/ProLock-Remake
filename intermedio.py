@@ -1,7 +1,3 @@
-# Ya no se necesitan 'csv' ni 'os' en este archivo
-# import csv
-# import os
-
 class Intermedio:
     """
     Clase encargada de la Generación de Código Intermedio (C3D)
@@ -53,7 +49,8 @@ class Intermedio:
     '''
     1. SEPARACIÓN DE BLOQUES DE ESPERA DE TIEMPO E INPUT EN EL BUCLE PRINCIPAL
     2. AHORA LOS WHEN DE ESPERA SE AGRUPAN EN UN SOLO WAITER EN VEZ DE ASIGNAR UNO POR CLAUSULA
-    3. SE ELIMINA CÓDIGO MUERTO EN ASIGNACIONES DE VARIABLES NO USADAS MEDIANTE LA HERENCIA DE SCOPE Y LA VISITA DE LA TABLA DE SÍMBOLOS
+    3. SE ELIMINA CÓDIGO MUERTO EN ASIGNACIONES DE VARIABLES NO USADAS MEDIANTE LA HERENCIA DE SCOPE 
+       Y LA VISITA DE LA TABLA DE SÍMBOLOS
     '''
     def visitar_programa(self, node, scope='global'): 
         # 1. Declaraciones globales
@@ -136,8 +133,6 @@ class Intermedio:
     def visitar_when_clause(self, node, scope):
         condition_node = node[1]
         actions = node[2]
-        
-        # --- LÓGICA DE 'WAIT_TICK' / 'WAIT_INPUT' ELIMINADA DE AQUÍ ---
         
         # 1. Generar código para la expresión condicional
         condition_location = self.visitar_expresion(condition_node, scope)

@@ -347,10 +347,6 @@ class CompilerGUI:
             # 3. Mostrar el resultado en la consola
             self.console_area.insert(tk.END, f"Generación de C3D completada. {len(intermediate_code_list)} cuádruplos generados.\n", 'success')
             
-            # Opcional: imprimir los cuádruplos en la consola
-            # for i, quad in enumerate(intermediate_code_list):
-            #     self.console_area.insert(tk.END, f"  ({i:03}): {quad}\n")
-            
             self.console_area.insert(tk.END, "\n¡Compilación finalizada con éxito!\n", 'success')
             self.console_area.insert(tk.END, "Puede exportar el Código Intermedio desde 'Herramientas'.\n", 'info')
 
