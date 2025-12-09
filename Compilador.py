@@ -1,12 +1,18 @@
+# Dependencias estándar
 import os
 import csv
 import tkinter as tk
 from tkinter import font, filedialog, scrolledtext, ttk, messagebox
-import lexico as ANLX
-import sintactico as ANSX
-import arbolSintaxis as ARSX
-import semantico as ANSM 
-import intermedio as GNCI
+
+# Dependencias internas
+import arbolSintaxis as ARSX 
+
+# Módulos del compilador
+import lexico as ANLX # Fase 1: Análisis Léxico
+import sintactico as ANSX # Fase 2: Análisis Sintáctico
+import semantico as ANSM # Fase 3: Análisis Semántico
+import intermedio as GNCI # Fase 4: Generación de Código Intermedio
+import backend as GNCO # Fase 5: Código Objeto (Backend)
 
 try:
     from graphviz import Source
@@ -350,12 +356,28 @@ class CompilerGUI:
             self.console_area.insert(tk.END, "\n¡Compilación finalizada con éxito!\n", 'success')
             self.console_area.insert(tk.END, "Puede exportar el Código Intermedio desde 'Herramientas'.\n", 'info')
 
-
         except Exception as e:
             self.console_area.insert(tk.END, f"Fase de GCI fallida. Error: {e}\n", 'error')
             self.intermediate_code_generator = None # Asegurarse que es None si falla
 
-        self.console_area.config(state=tk.DISABLED) # Movimos el bloque de semantico hasta aquí, la nueva fase 4
+    # ==========================================================
+    # FASE 5: CÓDIGO OBJETO (BACKEND)
+    # ==========================================================
+    def generar_arduino(self):
+        if not hasattr(self, 'intermediate_code_generator') or not self.intermediate_code_generator:
+             messagebox.showerror("Error", "Primero debes compilar el código.")
+             return
+        # Obtener los cuádruplos generados para esta nueva fase
+        cuadruplos = self.intermediate_code_generator.codigo_intermedio
+        
+        try:
+            generator = GNCO.ArduinoGenerator(cuadruplos)
+            filepath = generator.generate()
+            messagebox.showinfo("Éxito", f"Código Arduino generado en:\n{filepath}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Falló la generación: {e}")
+
+        self.console_area.config(state=tk.DISABLED) # Desactivar la consola al final
 
 #================================================================================================== FUNCIONES DE EXPORTACIÓN
     def exportar_intermedio(self):

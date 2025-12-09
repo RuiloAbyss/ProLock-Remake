@@ -78,6 +78,7 @@ class Intermedio:
                         input_actions.append(action_with_scope)
 
         # 4. === BLOQUE DE TIEMPO ===
+        # Detecta el tipo de espera y agrupa todas las acciones de tiempo
         self.emitir('WAIT_TICK', '1s', '', '')
         for action, action_scope in time_actions:
             self.visitar(action, action_scope) 
