@@ -108,6 +108,7 @@ class CompilerGUI:
         tools_menu.add_command(label="Ver Tokens", command=self.ver_tokens)
         tools_menu.add_command(label="Ver Árbol Sintáctico", command=self.ver_arbol)
         tools_menu.add_command(label="Exportar C. Intermedio (CSV)", command=self.exportar_intermedio)
+        tools_menu.add_command(label="Generar Código Arduino", command=self.generar_arduino)
 
         # --- PanedWindow como contenedor principal ---
         main_pane = tk.PanedWindow(self.root, orient=tk.VERTICAL, sashrelief=tk.RAISED, sashwidth=4, bg=self.colors["background"])
@@ -356,6 +357,11 @@ class CompilerGUI:
             self.console_area.insert(tk.END, "\n¡Compilación finalizada con éxito!\n", 'success')
             self.console_area.insert(tk.END, "Puede exportar el Código Intermedio desde 'Herramientas'.\n", 'info')
 
+            # Fase finalizada exitosamente (Lista para construir código objeto)
+            self.console_area.insert(tk.END, "--------------------------------------------------------------", 'info')
+            self.console_area.insert(tk.END, "\n¡Ahora Puedes Exportar el código a tu Cerradura Electrónica!\n", 'success')
+            self.console_area.insert(tk.END, "Puede exportar el Código Objeto desde 'Herramientas'.\n", 'info')
+
         except Exception as e:
             self.console_area.insert(tk.END, f"Fase de GCI fallida. Error: {e}\n", 'error')
             self.intermediate_code_generator = None # Asegurarse que es None si falla
@@ -367,13 +373,29 @@ class CompilerGUI:
         if not hasattr(self, 'intermediate_code_generator') or not self.intermediate_code_generator:
              messagebox.showerror("Error", "Primero debes compilar el código.")
              return
-        # Obtener los cuádruplos generados para esta nueva fase
+        
+        # Preguntar al usuario dónde guardar
+        archivo_usuario = filedialog.asksaveasfilename(
+            defaultextension=".ino",
+            filetypes=[("Arduino Sketch", "*.ino"), ("Todos los archivos", "*.*")],
+            title="Guardar Código Arduino",
+            initialfile="SmartHome.ino"
+        )
+
+        # Si el usuario cancela, no hacemos nada
+        if not archivo_usuario:
+            return
+
+        # Obtener los cuádruplos
         cuadruplos = self.intermediate_code_generator.codigo_intermedio
         
         try:
             generator = GNCO.ArduinoGenerator(cuadruplos)
-            filepath = generator.generate()
-            messagebox.showinfo("Éxito", f"Código Arduino generado en:\n{filepath}")
+            
+            # 2. Pasamos la ruta elegida al generador
+            filepath = generator.generate(ruta_personalizada=archivo_usuario)
+            
+            messagebox.showinfo("Éxito", f"Código Arduino guardado correctamente en:\n{filepath}")
         except Exception as e:
             messagebox.showerror("Error", f"Falló la generación: {e}")
 
