@@ -3,7 +3,7 @@ program SmartHome {
 
    lock front_door() {
       state:
-          boolean is_locked = true
+          boolean is_locked = false
           $PASS = "1235"
    }
    // Rutina consolidada que maneja todas las acciones programadas.
@@ -16,5 +16,6 @@ program SmartHome {
 		}
    }
 }
+
 
 

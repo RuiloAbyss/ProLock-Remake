@@ -4,19 +4,17 @@
 #include <LiquidCrystal.h>
 
 RTC_DS1307 rtc;
-
-// --- NUEVA CONFIGURACIÓN DE PINES (LCD + BOTONES) ---
-// LCD: RS=12, E=11, D4=5, D5=4, D6=3, D7=2
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
-const int PIN_LOCKED = A0;    // LED ROJO (Pin físico 23)
-const int PIN_UNLOCKED = A1;  // LED VERDE (Pin físico 24)
-const int PIN_SWITCH_OPEN = A2; // SWITCH ABRIR (Pin físico 25)
-const int PIN_BTN_CLOSE = A3;   // BOTÓN CERRAR (Pin físico 26)
+// --- PINES ---
+const int PIN_LOCKED = A0;      // LED ROJO
+const int PIN_UNLOCKED = A1;    // LED VERDE
+const int PIN_BTN_OPEN = A2;    // BOTÓN ABRIR
+const int PIN_BTN_CLOSE = A3;   // BOTÓN CERRAR
 
 String inputString = "";
-unsigned long previousMillis = 0;
-const long interval = 1000;
+boolean lastLockState = false; 
+String lastTimeDisplayed = "";
 
 // Variables Generadas
 String PASS = "";
@@ -36,24 +34,75 @@ String getCurrentTime() {
   return String(buffer);
 }
 
-void updateLCD(String status) {
-  lcd.setCursor(0, 0);
-  lcd.print("Hora: " + getCurrentTime());
-  lcd.setCursor(0, 1);
-  lcd.print(status);
+// --- ACTUALIZADOR DE INTERFAZ ---
+void refreshUI() {
+  // 1. Actualizar Hora
+  String currentTime = getCurrentTime();
+  if (currentTime != lastTimeDisplayed) {
+      lcd.setCursor(0, 0); 
+      lcd.print("Hora: " + currentTime);
+      lastTimeDisplayed = currentTime;
+  }
+
+  // 2. Actualizar LEDs y Estado LCD
+  if (is_locked) {
+      digitalWrite(PIN_LOCKED, HIGH);
+      digitalWrite(PIN_UNLOCKED, LOW);
+  } else {
+      digitalWrite(PIN_LOCKED, LOW);
+      digitalWrite(PIN_UNLOCKED, HIGH);
+  }
+
+  if (is_locked != lastLockState) {
+      lcd.setCursor(0, 1);
+      if (is_locked) lcd.print("CERRADO         ");
+      else           lcd.print("ABIERTO         ");
+      lastLockState = is_locked;
+  }
 }
 
-void force_lock() {
-  digitalWrite(PIN_LOCKED, HIGH);
-  digitalWrite(PIN_UNLOCKED, LOW);
-  updateLCD("Estado: CERRADO ");
+// --- CHEQUEO DE BOTONES (SIN CONDICIONES - FUERZA BRUTA) ---
+void checkButtons() {
+  // Botón ABRIR
+  if (digitalRead(PIN_BTN_OPEN) == HIGH) {
+      // Imprimimos SIEMPRE para saber que el botón funciona físicamente
+      Serial.println("[DIAGNOSTICO] Boton ABRIR detectado");
+      
+      is_locked = false; // Forzar estado
+      refreshUI();       // Actualizar visuales
+      delay(500);        // Pausa para evitar rebote
+  }
+  
+  // Botón CERRAR
+  if (digitalRead(PIN_BTN_CLOSE) == HIGH) {
+      // Imprimimos SIEMPRE para saber que el botón funciona físicamente
+      Serial.println("[DIAGNOSTICO] Boton CERRAR detectado");
+      
+      is_locked = true;  // Forzar estado
+      refreshUI();       // Actualizar visuales
+      delay(500);        // Pausa para evitar rebote
+  }
 }
 
-void force_unlock() {
-  digitalWrite(PIN_LOCKED, LOW);
-  digitalWrite(PIN_UNLOCKED, HIGH);
-  updateLCD("Estado: ABIERTO ");
+// --- ESPERA INTELIGENTE ---
+void smartDelay(unsigned long ms) {
+  unsigned long start = millis();
+  while (millis() - start < ms) {
+      refreshUI();
+      checkButtons(); // Revisar botones constantemente
+      
+      // Chequear Terminal
+      if (Serial.available() > 0) {
+          String raw = Serial.readStringUntil('\r');
+          if (Serial.peek() == '\n') Serial.read();
+          processInput(raw);
+      }
+  }
 }
+
+// Funciones lógicas simples
+void force_lock() { is_locked = true; refreshUI(); }
+void force_unlock() { is_locked = false; refreshUI(); }
 
 void processInput(String input) {
   input.trim();
@@ -62,12 +111,33 @@ void processInput(String input) {
       inputString = input;
       Serial.println("[INPUT] Recibido: " + inputString);
       lcd.setCursor(0, 1); lcd.print("Pass: " + inputString + "    ");
+      smartDelay(500); 
       return;
   }
   String varName = input.substring(0, separatorIndex);
   String varValue = input.substring(separatorIndex + 1);
   varName.trim(); varValue.trim();
   Serial.println("[ERROR] Sin globales.");
+}
+void checkLogic() {
+  inputPass = "";
+  is_locked = false;
+  PASS = 1235;
+
+  smartDelay(10);
+MAIN_LOOP:
+  smartDelay(1000);
+  smartDelay(100);
+  t1 = (PASS == inputString);
+  if (t1) goto L1;
+  goto L2;
+L1:
+  force_unlock();
+  is_locked = false;
+L2:
+  goto MAIN_LOOP;
+
+  return;
 }
 
 void setup() {
@@ -76,45 +146,20 @@ void setup() {
   lcd.begin(16, 2);
   lcd.print("PROLOCK SYSTEM");
   pinMode(PIN_LOCKED, OUTPUT); pinMode(PIN_UNLOCKED, OUTPUT);
-  pinMode(PIN_SWITCH_OPEN, INPUT); pinMode(PIN_BTN_CLOSE, INPUT);
+  pinMode(PIN_BTN_OPEN, INPUT); pinMode(PIN_BTN_CLOSE, INPUT);
   if (!rtc.begin()) { lcd.setCursor(0,1); lcd.print("ERROR RTC"); }
   if (!rtc.isrunning()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); }
-  force_lock();
-}
-void loop() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-      previousMillis = currentMillis;
-      lcd.setCursor(0, 0); lcd.print("Hora: " + getCurrentTime());
-  }
-  if (digitalRead(PIN_SWITCH_OPEN) == HIGH) {
-      force_unlock(); delay(200); return;
-  }
-  if (digitalRead(PIN_BTN_CLOSE) == HIGH) {
-      force_lock(); delay(500); return;
-  }
-  inputPass = "";
   is_locked = true;
-  PASS = 1235;
+  refreshUI();
+}
 
-  // BUCLE PRINCIPAL
-  for(int k=0; k<5; k++) { // Espera fragmentada
-      if(digitalRead(PIN_SWITCH_OPEN) == HIGH) return;
-      if(digitalRead(PIN_BTN_CLOSE) == HIGH) return;
-      delay(200);
-  }
-  if (Serial.available() > 0) {
-     String rawInput = Serial.readStringUntil('\r');
-     // Limpiar buffer de caracteres extra como \n
-     if (Serial.peek() == '\n') Serial.read();
-     processInput(rawInput);
-  }
-  t1 = (PASS == inputString);
-  if (t1) goto L1;
-  goto L2;
-L1:
-  force_unlock();
-  is_locked = false;
-L2:
-  return;
+void loop() {
+  // 1. Revisar Botones Físicos (Prioridad)
+  checkButtons();
+
+  // 2. Ejecutar Lógica Automática
+  checkLogic();
+  
+  // 3. Limpieza
+  if (inputString != "") inputString = ""; 
 }
