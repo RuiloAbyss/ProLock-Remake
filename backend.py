@@ -2,6 +2,28 @@ import os
 import subprocess
 import sys
 
+# === CONFIGURACIÓN DE PINES CORREGIDA BASADA EN EL DIAGRAMA ===
+# U1 (DS1307) usa A4 (SDA) y A5 (SCL) automáticamente con la librería Wire/RTClib.
+# El LCD está bien cableado, PERO tus LEDs y Botones están en los pines analógicos.
+# El mapeo de pines analógicos en Arduino es A0, A1, A2, A3, etc.
+PIN_LOCKED_CORRECT = 14  # Pin D0 (PD0/RXD) <-- El pin 14 es el PC0/ADC0. Mejor usar A0 si están en A
+PIN_UNLOCKED_CORRECT = 15 # Pin D1 (PD1/TXD) <-- El pin 15 es el PC1/ADC1. Mejor usar A1
+PIN_BTN_OPEN_CORRECT = 16 # Pin D2 (PD2/INT0) <-- El pin 16 es el PC2/ADC2. Mejor usar A2
+PIN_BTN_CLOSE_CORRECT = 17 # Pin D3 (PD3/INT1) <-- El pin 17 es el PC3/ADC3. Mejor usar A3
+
+# Nota sobre el diagrama: Los pines 23-26 del ATmega328P son PC0-PC3. 
+# En Arduino IDE, estos se nombran A0, A1, A2, A3. Usaremos A0-A3 para mayor claridad.
+# LED_ROJO (D1) va a PC0 (Pin 23) -> A0
+# LED_VERDE (D2) va a PC1 (Pin 24) -> A1
+# BOTÓN CERRAR (R4) va a PC3 (Pin 26) -> A3
+# BOTÓN ABRIR (R1) va a PC2 (Pin 25) -> A2
+
+# Mapeo a pines lógicos de Arduino (A0, A1, A2, A3)
+PIN_LOCKED_LOGIC = "A0"
+PIN_UNLOCKED_LOGIC = "A1"
+PIN_BTN_OPEN_LOGIC = "A2"
+PIN_BTN_CLOSE_LOGIC = "A3"
+
 class ArduinoGenerator:
     def __init__(self, intermediate_code, output_dir="arduino_build"):
         self.intermediate_code = intermediate_code
@@ -11,7 +33,10 @@ class ArduinoGenerator:
         self.internal_vars = set()   
         self.arduino_code = ""
 
+    # ... [El resto de métodos utilitarios (_clean_and_map, map_operator, _analyze_variables) se mantiene igual] ...
+
     def map_operator(self, op):
+        # Mantenemos este método igual
         mapping = {
             '==': '==', '!=': '!=', '>': '>', '<': '<', '>=': '>=', '<=': '<=',
             '+': '+', '-': '-', '*': '*', '/': '/',
@@ -20,6 +45,7 @@ class ArduinoGenerator:
         return mapping.get(op, op)
 
     def _clean_and_map(self, arg):
+        # Mantenemos este método igual
         if arg is None: return '""'
         clean_arg = arg.split('.')[-1] if '.' in arg else arg
         if clean_arg == "inputPass": return "inputString" 
@@ -27,6 +53,7 @@ class ArduinoGenerator:
         return clean_arg
 
     def _analyze_variables(self):
+        # Mantenemos este método igual
         self.global_vars.clear()
         self.internal_vars.clear()
         self.variables.clear()
@@ -39,19 +66,20 @@ class ArduinoGenerator:
             if res and res.startswith('t'): self.variables.add(res)
 
     def get_template_head(self):
-        return """
+        # --- AHORA USA LOS PINES CORRECTOS (A0-A3) ---
+        return f"""
 #include <Wire.h>
 #include <RTClib.h> 
 #include <LiquidCrystal.h>
 
 RTC_DS1307 rtc;
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2); // Pines D4-D7 del LCD a D5-D2 del uC
 
-// --- PINES ---
-const int PIN_LOCKED = A0;      // LED ROJO
-const int PIN_UNLOCKED = A1;    // LED VERDE
-const int PIN_BTN_OPEN = A2;    // BOTÓN ABRIR
-const int PIN_BTN_CLOSE = A3;   // BOTÓN CERRAR
+// --- PINES CORREGIDOS SEGÚN DIAGRAMA PROTEUS ---
+const int PIN_LOCKED = {PIN_LOCKED_LOGIC};      // LED ROJO (D1) -> PC0/A0
+const int PIN_UNLOCKED = {PIN_UNLOCKED_LOGIC};    // LED VERDE (D2) -> PC1/A1
+const int PIN_BTN_OPEN = {PIN_BTN_OPEN_LOGIC};    // BOTÓN ABRIR (R1) -> PC2/A2
+const int PIN_BTN_CLOSE = {PIN_BTN_CLOSE_LOGIC};   // BOTÓN CERRAR (R4) -> PC3/A3
 
 String inputString = "";
 boolean lastLockState = false; 
@@ -60,84 +88,85 @@ String lastTimeDisplayed = "";
 // Variables Generadas
 VAR_DECLARATIONS
 
-String getCurrentTime() {
+String getCurrentTime() {{
+  // Lógica para obtener la hora del RTC (DS1307)
   DateTime now = rtc.now();
   char buffer[9];
   sprintf(buffer, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
   return String(buffer);
-}
+}}
 
 // --- ACTUALIZADOR DE INTERFAZ ---
-void refreshUI() {
+void refreshUI() {{
   // 1. Actualizar Hora
   String currentTime = getCurrentTime();
-  if (currentTime != lastTimeDisplayed) {
+  // El tiempo se actualiza cada segundo (WAIT_TICK)
+  if (currentTime != lastTimeDisplayed) {{ 
       lcd.setCursor(0, 0); 
+      // Mostramos la hora en la primera línea
       lcd.print("Hora: " + currentTime);
       lastTimeDisplayed = currentTime;
-  }
+  }}
 
-  // 2. Actualizar LEDs y Estado LCD
-  if (is_locked) {
+  // 2. Actualizar LEDs y Estado LCD (LED HIGH = Encendido)
+  if (is_locked) {{
       digitalWrite(PIN_LOCKED, HIGH);
       digitalWrite(PIN_UNLOCKED, LOW);
-  } else {
+  }} else {{
       digitalWrite(PIN_LOCKED, LOW);
       digitalWrite(PIN_UNLOCKED, HIGH);
-  }
+  }}
 
-  if (is_locked != lastLockState) {
+  // 3. Actualizar mensaje de estado solo si cambia
+  if (is_locked != lastLockState) {{
       lcd.setCursor(0, 1);
       if (is_locked) lcd.print("CERRADO         ");
       else           lcd.print("ABIERTO         ");
       lastLockState = is_locked;
-  }
-}
+  }}
+}}
 
 // --- CHEQUEO DE BOTONES (SIN CONDICIONES - FUERZA BRUTA) ---
-void checkButtons() {
-  // Botón ABRIR
-  if (digitalRead(PIN_BTN_OPEN) == HIGH) {
-      // Imprimimos SIEMPRE para saber que el botón funciona físicamente
-      Serial.println("[DIAGNOSTICO] Boton ABRIR detectado");
-      
-      is_locked = false; // Forzar estado
-      refreshUI();       // Actualizar visuales
-      delay(500);        // Pausa para evitar rebote
-  }
+void checkButtons() {{
+  // Los botones R1 y R4 están cableados como PULL-DOWN en el diagrama (conectados a VCC a través de la resistencia)
+  // Por lo tanto, se leen HIGH cuando se presionan.
   
-  // Botón CERRAR
-  if (digitalRead(PIN_BTN_CLOSE) == HIGH) {
-      // Imprimimos SIEMPRE para saber que el botón funciona físicamente
+  // Botón ABRIR (R1)
+  if (digitalRead(PIN_BTN_OPEN) == HIGH) {{
+      Serial.println("[DIAGNOSTICO] Boton ABRIR detectado");
+      force_unlock(); // Llama a la acción de apertura
+      delay(500);        
+  }}
+  
+  // Botón CERRAR (R4)
+  if (digitalRead(PIN_BTN_CLOSE) == HIGH) {{
       Serial.println("[DIAGNOSTICO] Boton CERRAR detectado");
-      
-      is_locked = true;  // Forzar estado
-      refreshUI();       // Actualizar visuales
-      delay(500);        // Pausa para evitar rebote
-  }
-}
+      force_lock(); // Llama a la acción de cierre
+      delay(500);        
+  }}
+}}
 
 // --- ESPERA INTELIGENTE ---
-void smartDelay(unsigned long ms) {
+void smartDelay(unsigned long ms) {{
   unsigned long start = millis();
-  while (millis() - start < ms) {
+  while (millis() - start < ms) {{
       refreshUI();
-      checkButtons(); // Revisar botones constantemente
+      checkButtons(); 
       
       // Chequear Terminal
-      if (Serial.available() > 0) {
+      if (Serial.available() > 0) {{
           String raw = Serial.readStringUntil('\\r');
           if (Serial.peek() == '\\n') Serial.read();
           processInput(raw);
-      }
-  }
-}
+      }}
+  }}
+}}
 
 // Funciones lógicas simples
-void force_lock() { is_locked = true; refreshUI(); }
-void force_unlock() { is_locked = false; refreshUI(); }
+void force_lock() {{ is_locked = true; refreshUI(); }}
+void force_unlock() {{ is_locked = false; refreshUI(); }}
 """
-
+    # ... [El resto de métodos (generate, compile_hex) se mantienen IGUAL] ...
     def generate(self, ruta_personalizada=None):
         self._analyze_variables()
         known_internals = {"is_locked", "PASS", "lock_time", "unlock_time", "report_time"}
@@ -225,8 +254,11 @@ void processInput(String input) {
         
         final_ino += "\nvoid setup() {\n  Serial.begin(9600);\n  Serial.setTimeout(50);\n"
         final_ino += "  lcd.begin(16, 2);\n  lcd.print(\"PROLOCK SYSTEM\");\n"
-        final_ino += "  pinMode(PIN_LOCKED, OUTPUT); pinMode(PIN_UNLOCKED, OUTPUT);\n"
-        final_ino += "  pinMode(PIN_BTN_OPEN, INPUT); pinMode(PIN_BTN_CLOSE, INPUT);\n"
+        
+        # --- CONFIGURACIÓN DE PINES EN SETUP ---
+        final_ino += f"  pinMode({PIN_LOCKED_LOGIC}, OUTPUT); pinMode({PIN_UNLOCKED_LOGIC}, OUTPUT);\n"
+        final_ino += f"  pinMode({PIN_BTN_OPEN_LOGIC}, INPUT); pinMode({PIN_BTN_CLOSE_LOGIC}, INPUT);\n"
+        
         final_ino += "  if (!rtc.begin()) { lcd.setCursor(0,1); lcd.print(\"ERROR RTC\"); }\n"
         final_ino += "  if (!rtc.isrunning()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); }\n"
         final_ino += "  is_locked = true;\n  refreshUI();\n}\n"
@@ -261,6 +293,7 @@ void loop() {
         return filepath
 
     def compile_hex(self, ino_path):
+        # Mantenemos este método igual (asumimos que la ruta del cli está bien)
         base_dir = os.path.dirname(os.path.abspath(__file__))
         cli_path = os.path.join(base_dir, "arduino-cli.exe")
         if not os.path.exists(cli_path): return False, "Falta arduino-cli.exe"

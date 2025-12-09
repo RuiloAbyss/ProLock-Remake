@@ -4,13 +4,13 @@
 #include <LiquidCrystal.h>
 
 RTC_DS1307 rtc;
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2); // Pines D4-D7 del LCD a D5-D2 del uC
 
-// --- PINES ---
-const int PIN_LOCKED = A0;      // LED ROJO
-const int PIN_UNLOCKED = A1;    // LED VERDE
-const int PIN_BTN_OPEN = A2;    // BOTÓN ABRIR
-const int PIN_BTN_CLOSE = A3;   // BOTÓN CERRAR
+// --- PINES CORREGIDOS SEGÚN DIAGRAMA PROTEUS ---
+const int PIN_LOCKED = A0;      // LED ROJO (D1) -> PC0/A0
+const int PIN_UNLOCKED = A1;    // LED VERDE (D2) -> PC1/A1
+const int PIN_BTN_OPEN = A2;    // BOTÓN ABRIR (R1) -> PC2/A2
+const int PIN_BTN_CLOSE = A3;   // BOTÓN CERRAR (R4) -> PC3/A3
 
 String inputString = "";
 boolean lastLockState = false; 
@@ -28,6 +28,7 @@ boolean t1 = false;
 
 
 String getCurrentTime() {
+  // Lógica para obtener la hora del RTC (DS1307)
   DateTime now = rtc.now();
   char buffer[9];
   sprintf(buffer, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
@@ -38,13 +39,15 @@ String getCurrentTime() {
 void refreshUI() {
   // 1. Actualizar Hora
   String currentTime = getCurrentTime();
-  if (currentTime != lastTimeDisplayed) {
+  // El tiempo se actualiza cada segundo (WAIT_TICK)
+  if (currentTime != lastTimeDisplayed) { 
       lcd.setCursor(0, 0); 
+      // Mostramos la hora en la primera línea
       lcd.print("Hora: " + currentTime);
       lastTimeDisplayed = currentTime;
   }
 
-  // 2. Actualizar LEDs y Estado LCD
+  // 2. Actualizar LEDs y Estado LCD (LED HIGH = Encendido)
   if (is_locked) {
       digitalWrite(PIN_LOCKED, HIGH);
       digitalWrite(PIN_UNLOCKED, LOW);
@@ -53,6 +56,7 @@ void refreshUI() {
       digitalWrite(PIN_UNLOCKED, HIGH);
   }
 
+  // 3. Actualizar mensaje de estado solo si cambia
   if (is_locked != lastLockState) {
       lcd.setCursor(0, 1);
       if (is_locked) lcd.print("CERRADO         ");
@@ -63,24 +67,21 @@ void refreshUI() {
 
 // --- CHEQUEO DE BOTONES (SIN CONDICIONES - FUERZA BRUTA) ---
 void checkButtons() {
-  // Botón ABRIR
+  // Los botones R1 y R4 están cableados como PULL-DOWN en el diagrama (conectados a VCC a través de la resistencia)
+  // Por lo tanto, se leen HIGH cuando se presionan.
+  
+  // Botón ABRIR (R1)
   if (digitalRead(PIN_BTN_OPEN) == HIGH) {
-      // Imprimimos SIEMPRE para saber que el botón funciona físicamente
       Serial.println("[DIAGNOSTICO] Boton ABRIR detectado");
-      
-      is_locked = false; // Forzar estado
-      refreshUI();       // Actualizar visuales
-      delay(500);        // Pausa para evitar rebote
+      force_unlock(); // Llama a la acción de apertura
+      delay(500);        
   }
   
-  // Botón CERRAR
+  // Botón CERRAR (R4)
   if (digitalRead(PIN_BTN_CLOSE) == HIGH) {
-      // Imprimimos SIEMPRE para saber que el botón funciona físicamente
       Serial.println("[DIAGNOSTICO] Boton CERRAR detectado");
-      
-      is_locked = true;  // Forzar estado
-      refreshUI();       // Actualizar visuales
-      delay(500);        // Pausa para evitar rebote
+      force_lock(); // Llama a la acción de cierre
+      delay(500);        
   }
 }
 
@@ -89,7 +90,7 @@ void smartDelay(unsigned long ms) {
   unsigned long start = millis();
   while (millis() - start < ms) {
       refreshUI();
-      checkButtons(); // Revisar botones constantemente
+      checkButtons(); 
       
       // Chequear Terminal
       if (Serial.available() > 0) {
@@ -145,8 +146,8 @@ void setup() {
   Serial.setTimeout(50);
   lcd.begin(16, 2);
   lcd.print("PROLOCK SYSTEM");
-  pinMode(PIN_LOCKED, OUTPUT); pinMode(PIN_UNLOCKED, OUTPUT);
-  pinMode(PIN_BTN_OPEN, INPUT); pinMode(PIN_BTN_CLOSE, INPUT);
+  pinMode(A0, OUTPUT); pinMode(A1, OUTPUT);
+  pinMode(A2, INPUT); pinMode(A3, INPUT);
   if (!rtc.begin()) { lcd.setCursor(0,1); lcd.print("ERROR RTC"); }
   if (!rtc.isrunning()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); }
   is_locked = true;
