@@ -14,3 +14,4 @@ comandos (En la raíz del proyecto con arduino-cli descargado)
 .\arduino-cli core update-index
 .\arduino-cli core install arduino:avr
 .\arduino-cli.exe lib install "RTClib"
+.\arduino-cli.exe lib install "LiquidCrystal"

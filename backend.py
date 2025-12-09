@@ -20,9 +20,7 @@ class ArduinoGenerator:
         return mapping.get(op, op)
 
     def _clean_and_map(self, arg):
-        # Evitar errores con None
         if arg is None: return '""'
-        
         clean_arg = arg.split('.')[-1] if '.' in arg else arg
         if clean_arg == "inputPass": return "inputString" 
         if clean_arg == "TIME" or clean_arg == "$TIME": return "getCurrentTime()"
@@ -32,12 +30,10 @@ class ArduinoGenerator:
         self.global_vars.clear()
         self.internal_vars.clear()
         self.variables.clear()
-
         for quad in self.intermediate_code:
             op, arg1, arg2, res = quad
             if op == 'ASSIGN':
-                if '.' in res:
-                    self.internal_vars.add(res.split('.')[-1])
+                if '.' in res: self.internal_vars.add(res.split('.')[-1])
                 elif not res.startswith('t') and res != 'true' and res != 'false':
                     if res != 'inputPass': self.global_vars.add(res)
             if res and res.startswith('t'): self.variables.add(res)
@@ -46,44 +42,55 @@ class ArduinoGenerator:
         return """
 #include <Wire.h>
 #include <RTClib.h> 
+#include <LiquidCrystal.h>
 
 RTC_DS1307 rtc;
 
-const int PIN_LOCKED = 13;   
-const int PIN_UNLOCKED = 12; 
-const int PIN_MANUAL = 8;    
+// --- NUEVA CONFIGURACIÓN DE PINES (LCD + BOTONES) ---
+// LCD: RS=12, E=11, D4=5, D5=4, D6=3, D7=2
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+const int PIN_LOCKED = A0;    // LED ROJO (Pin físico 23)
+const int PIN_UNLOCKED = A1;  // LED VERDE (Pin físico 24)
+const int PIN_SWITCH_OPEN = A2; // SWITCH ABRIR (Pin físico 25)
+const int PIN_BTN_CLOSE = A3;   // BOTÓN CERRAR (Pin físico 26)
 
 String inputString = "";
-boolean stringComplete = false;
-boolean manual_override = false;
+unsigned long previousMillis = 0;
+const long interval = 1000;
 
 // Variables Generadas
 VAR_DECLARATIONS
 
 String getCurrentTime() {
   DateTime now = rtc.now();
-  char buffer[6];
-  sprintf(buffer, "%02d:%02d", now.hour(), now.minute());
+  char buffer[9];
+  sprintf(buffer, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
   return String(buffer);
+}
+
+void updateLCD(String status) {
+  lcd.setCursor(0, 0);
+  lcd.print("Hora: " + getCurrentTime());
+  lcd.setCursor(0, 1);
+  lcd.print(status);
 }
 
 void force_lock() {
   digitalWrite(PIN_LOCKED, HIGH);
   digitalWrite(PIN_UNLOCKED, LOW);
-  Serial.println("[ACCION] Puerta BLOQUEADA");
+  updateLCD("Estado: CERRADO ");
 }
 
 void force_unlock() {
   digitalWrite(PIN_LOCKED, LOW);
   digitalWrite(PIN_UNLOCKED, HIGH);
-  Serial.println("[ACCION] Puerta DESBLOQUEADA");
+  updateLCD("Estado: ABIERTO ");
 }
 """
 
     def generate(self, ruta_personalizada=None):
         self._analyze_variables()
-        
-        # Limpieza de variables duplicadas
         known_internals = {"is_locked", "PASS", "lock_time", "unlock_time", "report_time"}
         self.internal_vars.update(known_internals)
         self.global_vars = self.global_vars - self.internal_vars
@@ -91,7 +98,6 @@ void force_unlock() {
         code_body = ""
         indent = "  "
         
-        # Generación del Loop Principal
         for quad in self.intermediate_code:
             op, arg1, arg2, res = quad
             if op == 'LABEL':
@@ -109,10 +115,16 @@ void force_unlock() {
                 target = res.split('.')[-1] if '.' in res else res
                 code_body += f"{indent}{target} = {val};\n"
             elif op == 'WAIT_TICK':
-                code_body += f"{indent}delay(1000);\n"
+                code_body += f"{indent}for(int k=0; k<5; k++) {{ // Espera fragmentada\n"
+                code_body += f"{indent}    if(digitalRead(PIN_SWITCH_OPEN) == HIGH) return;\n"
+                code_body += f"{indent}    if(digitalRead(PIN_BTN_CLOSE) == HIGH) return;\n"
+                code_body += f"{indent}    delay(200);\n"
+                code_body += f"{indent}}}\n"
             elif op == 'WAIT_INPUT':
                 code_body += f"{indent}if (Serial.available() > 0) {{\n"
-                code_body += f"{indent}   String rawInput = Serial.readStringUntil('\\n');\n"
+                code_body += f"{indent}   String rawInput = Serial.readStringUntil('\\r');\n" # DETECTAR ENTER CORRECTAMENTE
+                code_body += f"{indent}   // Limpiar buffer de caracteres extra como \\n\n"
+                code_body += f"{indent}   if (Serial.peek() == '\\n') Serial.read();\n" 
                 code_body += f"{indent}   processInput(rawInput);\n"
                 code_body += f"{indent}}}\n"
             elif op == 'CALL':
@@ -130,7 +142,6 @@ void force_unlock() {
                 c_arg2 = self._clean_and_map(arg2)
                 code_body += f"{indent}{res} = ({c_arg1} {cpp_op} {c_arg2});\n"
 
-        # Declaraciones de Variables
         var_decl = ""
         for g_var in sorted(list(self.global_vars)): var_decl += f"String {g_var} = \"\";\n"
         for i_var in sorted(list(self.internal_vars)):
@@ -139,54 +150,62 @@ void force_unlock() {
         var_decl += "String inputPass = \"\";\nString TIME = \"\";\n"
         for var in sorted(list(self.variables)): var_decl += f"boolean {var} = false;\n"
 
-        # --- FUNCIÓN processInput (CORREGIDA) ---
         process_input_func = """
 void processInput(String input) {
   input.trim();
   int separatorIndex = input.indexOf('=');
-  
-  // Si no hay '=', es una entrada normal (contraseña)
   if (separatorIndex == -1) {
       inputString = input;
       Serial.println("[INPUT] Recibido: " + inputString);
+      lcd.setCursor(0, 1); lcd.print("Pass: " + inputString + "    ");
       return;
   }
-
-  // Si hay '=', es un comando de sistema
   String varName = input.substring(0, separatorIndex);
   String varValue = input.substring(separatorIndex + 1);
   varName.trim(); varValue.trim();
 """
-        # Generación Dinámica de IFs
         first = True
-        hay_variables_globales = False # Bandera de control
-
+        hay_vars = False
         for g_var in sorted(list(self.global_vars)):
-            hay_variables_globales = True
+            hay_vars = True
             else_prefix = "else " if not first else ""
-            process_input_func += f"""  {else_prefix}if (varName == "{g_var}") {{ {g_var} = varValue; Serial.println("[OK] Global actualizada."); }}\n"""
+            process_input_func += f"""  {else_prefix}if (varName == "{g_var}") {{ {g_var} = varValue; Serial.println("[OK] Actualizado."); }}\n"""
             first = False
         
-        # LÓGICA DE CIERRE SEGURA
-        if hay_variables_globales:
-            # Si hubo IFs, cerramos con un ELSE
-            process_input_func += """  else { Serial.println("[ERROR] Acceso denegado: Variable protegida o inexistente."); }\n}\n"""
+        if hay_vars:
+            process_input_func += """  else { Serial.println("[ERROR] Protegido/No existe."); }\n}\n"""
         else:
-            # Si NO hubo variables, no hubo IFs, por lo tanto NO ponemos ELSE.
-            # Simplemente imprimimos error directo porque no hay nada que modificar.
-            process_input_func += """  Serial.println("[ERROR] No hay variables globales modificables en este programa.");\n}\n"""
+            process_input_func += """  Serial.println("[ERROR] Sin globales.");\n}\n"""
 
-        # Ensamblar Final
         final_ino = self.get_template_head().replace('VAR_DECLARATIONS', var_decl)
         final_ino += process_input_func
-        final_ino += "\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(PIN_LOCKED, OUTPUT); pinMode(PIN_UNLOCKED, OUTPUT); pinMode(PIN_MANUAL, INPUT);\n"
-        final_ino += "  if (!rtc.begin()) { Serial.println(\"No RTC\"); while(1); }\n  if (!rtc.isrunning()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); }\n"
-        final_ino += "  force_lock();\n  Serial.println(\"--- PROLOCK SYSTEM ---\");\n}\n"
-        final_ino += "void loop() {\n  if (digitalRead(PIN_MANUAL) == HIGH) { force_unlock(); delay(1000); return; }\n"
+        final_ino += "\nvoid setup() {\n  Serial.begin(9600);\n  Serial.setTimeout(50);\n"
+        final_ino += "  lcd.begin(16, 2);\n  lcd.print(\"PROLOCK SYSTEM\");\n"
+        final_ino += "  pinMode(PIN_LOCKED, OUTPUT); pinMode(PIN_UNLOCKED, OUTPUT);\n"
+        final_ino += "  pinMode(PIN_SWITCH_OPEN, INPUT); pinMode(PIN_BTN_CLOSE, INPUT);\n"
+        final_ino += "  if (!rtc.begin()) { lcd.setCursor(0,1); lcd.print(\"ERROR RTC\"); }\n"
+        final_ino += "  if (!rtc.isrunning()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); }\n"
+        final_ino += "  force_lock();\n}\n"
+        
+        final_ino += "void loop() {\n"
+        # Actualización de pantalla
+        final_ino += "  unsigned long currentMillis = millis();\n"
+        final_ino += "  if (currentMillis - previousMillis >= interval) {\n"
+        final_ino += "      previousMillis = currentMillis;\n"
+        final_ino += "      lcd.setCursor(0, 0); lcd.print(\"Hora: \" + getCurrentTime());\n"
+        final_ino += "  }\n"
+        
+        # Botones Manuales
+        final_ino += "  if (digitalRead(PIN_SWITCH_OPEN) == HIGH) {\n"
+        final_ino += "      force_unlock(); delay(200); return;\n"
+        final_ino += "  }\n"
+        final_ino += "  if (digitalRead(PIN_BTN_CLOSE) == HIGH) {\n"
+        final_ino += "      force_lock(); delay(500); return;\n"
+        final_ino += "  }\n"
+        
         final_ino += code_body
         final_ino += "}\n"
 
-        # Guardado
         if ruta_personalizada:
             ruta_personalizada = os.path.normpath(ruta_personalizada)
             nombre_archivo = os.path.basename(ruta_personalizada)
@@ -206,55 +225,29 @@ void processInput(String input) {
         return filepath
 
     def compile_hex(self, ino_path):
-        """Compila a HEX mostrando salida en tiempo real."""
-        print(f"--- DEBUG: Iniciando Compilación HEX para: {ino_path}")
-        
         base_dir = os.path.dirname(os.path.abspath(__file__))
         cli_path = os.path.join(base_dir, "arduino-cli.exe")
         
-        if not os.path.exists(cli_path):
-            return False, f"CRITICO: No se encuentra 'arduino-cli.exe' en {base_dir}"
+        if not os.path.exists(cli_path): return False, "Falta arduino-cli.exe"
 
         fqbn = "arduino:avr:uno" 
         cmd = [cli_path, "compile", "--fqbn", fqbn, "--export-binaries", ino_path]
 
         try:
-            print("--- DEBUG: Ejecutando arduino-cli...")
-            
-            # USAMOS POPEN PARA TIEMPO REAL
-            process = subprocess.Popen(
-                cmd, 
-                stdout=subprocess.PIPE, 
-                stderr=subprocess.STDOUT, 
-                text=True,
-                bufsize=1,
-                universal_newlines=True
-            )
-            
-            full_log = ""
+            print("--- DEBUG: Compilando con arduino-cli...")
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, universal_newlines=True)
             for line in process.stdout:
-                linea_limpia = line.strip()
-                if linea_limpia:
-                    print(f"[ARDUINO] {linea_limpia}") # Muestra progreso en consola
-                    full_log += line
-            
+                if line.strip(): print(f"[ARDUINO] {line.strip()}")
             process.wait()
             
             if process.returncode == 0:
                 hex_path = ino_path + ".with_bootloader.hex"
-                if not os.path.exists(hex_path):
-                     hex_path = ino_path.replace(".ino", ".ino.hex")
-                
-                # Búsqueda profunda (backup)
+                if not os.path.exists(hex_path): hex_path = ino_path.replace(".ino", ".ino.hex")
                 if not os.path.exists(hex_path):
                      build_path = os.path.join(os.path.dirname(ino_path), "build", "arduino.avr.uno", os.path.basename(ino_path) + ".hex")
                      if os.path.exists(build_path): hex_path = build_path
-
-                print(f"--- DEBUG: HEX generado en: {hex_path}")
-                return True, f"Compilación Exitosa.\nHEX: {hex_path}"
+                return True, f"EXITO. HEX: {hex_path}"
             else:
-                return False, f"Error Arduino CLI:\n{full_log}"
-
+                return False, "Error compilacion"
         except Exception as e:
-            print(f"--- DEBUG: Excepción Python: {e}")
-            return False, f"Error sistema: {e}"
+            return False, f"Error: {e}"
