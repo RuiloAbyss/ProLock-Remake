@@ -27,6 +27,14 @@ String TIME = "";
 boolean t1 = false;
 
 
+// Prototipo de función para el manejo serial (SOLUCIONA EL ERROR 'not declared in this scope')
+void processInput(String input); 
+
+// Funciones lógicas simples (DECLARADAS ANTES DE USARSE)
+void force_lock() { is_locked = true; refreshUI(); }
+void force_unlock() { is_locked = false; refreshUI(); }
+
+
 String getCurrentTime() {
   // Lógica para obtener la hora del RTC (DS1307)
   DateTime now = rtc.now();
@@ -94,16 +102,14 @@ void smartDelay(unsigned long ms) {
       
       // Chequear Terminal
       if (Serial.available() > 0) {
-          String raw = Serial.readStringUntil('\r');
-          if (Serial.peek() == '\n') Serial.read();
+          // Usamos el valor numérico ASCII para evitar errores de escape.
+          String raw = Serial.readStringUntil(13); 
+          if (Serial.peek() == 10) Serial.read(); 
           processInput(raw);
       }
   }
-}
+} 
 
-// Funciones lógicas simples
-void force_lock() { is_locked = true; refreshUI(); }
-void force_unlock() { is_locked = false; refreshUI(); }
 
 void processInput(String input) {
   input.trim();
@@ -115,9 +121,12 @@ void processInput(String input) {
       smartDelay(500); 
       return;
   }
+  
+  // ASEGÚRATE QUE ESTAS LÍNEAS ESTÉN AQUÍ DENTRO DE processInput:
   String varName = input.substring(0, separatorIndex);
   String varValue = input.substring(separatorIndex + 1);
   varName.trim(); varValue.trim();
+
   Serial.println("[ERROR] Sin globales.");
 }
 void checkLogic() {

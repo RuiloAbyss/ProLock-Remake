@@ -33,10 +33,7 @@ class ArduinoGenerator:
         self.internal_vars = set()   
         self.arduino_code = ""
 
-    # ... [El resto de métodos utilitarios (_clean_and_map, map_operator, _analyze_variables) se mantiene igual] ...
-
     def map_operator(self, op):
-        # Mantenemos este método igual
         mapping = {
             '==': '==', '!=': '!=', '>': '>', '<': '<', '>=': '>=', '<=': '<=',
             '+': '+', '-': '-', '*': '*', '/': '/',
@@ -45,7 +42,6 @@ class ArduinoGenerator:
         return mapping.get(op, op)
 
     def _clean_and_map(self, arg):
-        # Mantenemos este método igual
         if arg is None: return '""'
         clean_arg = arg.split('.')[-1] if '.' in arg else arg
         if clean_arg == "inputPass": return "inputString" 
@@ -53,7 +49,6 @@ class ArduinoGenerator:
         return clean_arg
 
     def _analyze_variables(self):
-        # Mantenemos este método igual
         self.global_vars.clear()
         self.internal_vars.clear()
         self.variables.clear()
@@ -66,7 +61,7 @@ class ArduinoGenerator:
             if res and res.startswith('t'): self.variables.add(res)
 
     def get_template_head(self):
-        # --- AHORA USA LOS PINES CORRECTOS (A0-A3) ---
+        # --- AÑADIDA DECLARACIÓN ANTICIPADA DE processInput ---
         return f"""
 #include <Wire.h>
 #include <RTClib.h> 
@@ -87,6 +82,14 @@ String lastTimeDisplayed = "";
 
 // Variables Generadas
 VAR_DECLARATIONS
+
+// Prototipo de función para el manejo serial (SOLUCIONA EL ERROR 'not declared in this scope')
+void processInput(String input); 
+
+// Funciones lógicas simples (DECLARADAS ANTES DE USARSE)
+void force_lock() {{ is_locked = true; refreshUI(); }}
+void force_unlock() {{ is_locked = false; refreshUI(); }}
+
 
 String getCurrentTime() {{
   // Lógica para obtener la hora del RTC (DS1307)
@@ -155,18 +158,15 @@ void smartDelay(unsigned long ms) {{
       
       // Chequear Terminal
       if (Serial.available() > 0) {{
-          String raw = Serial.readStringUntil('\\r');
-          if (Serial.peek() == '\\n') Serial.read();
+          // Usamos el valor numérico ASCII para evitar errores de escape.
+          String raw = Serial.readStringUntil(13); 
+          if (Serial.peek() == 10) Serial.read(); 
           processInput(raw);
       }}
   }}
-}}
-
-// Funciones lógicas simples
-void force_lock() {{ is_locked = true; refreshUI(); }}
-void force_unlock() {{ is_locked = false; refreshUI(); }}
+}} 
 """
-    # ... [El resto de métodos (generate, compile_hex) se mantienen IGUAL] ...
+    
     def generate(self, ruta_personalizada=None):
         self._analyze_variables()
         known_internals = {"is_locked", "PASS", "lock_time", "unlock_time", "report_time"}
@@ -234,9 +234,12 @@ void processInput(String input) {
       smartDelay(500); 
       return;
   }
+  
+  // ASEGÚRATE QUE ESTAS LÍNEAS ESTÉN AQUÍ DENTRO DE processInput:
   String varName = input.substring(0, separatorIndex);
   String varValue = input.substring(separatorIndex + 1);
   varName.trim(); varValue.trim();
+
 """
         first = True
         hay_vars = False
@@ -248,7 +251,12 @@ void processInput(String input) {
         if hay_vars: process_input_func += """  else { Serial.println("[ERROR] Protegido."); }\n}\n"""
         else: process_input_func += """  Serial.println("[ERROR] Sin globales.");\n}\n"""
 
+        # --- ENSAMBLAJE FINAL ---
         final_ino = self.get_template_head().replace('VAR_DECLARATIONS', var_decl)
+        
+        # AÑADIMOS la llave de cierre de smartDelay() que faltaba al final del get_template_head
+        final_ino += "\n" 
+        
         final_ino += process_input_func
         final_ino += logic_body
         
@@ -293,7 +301,6 @@ void loop() {
         return filepath
 
     def compile_hex(self, ino_path):
-        # Mantenemos este método igual (asumimos que la ruta del cli está bien)
         base_dir = os.path.dirname(os.path.abspath(__file__))
         cli_path = os.path.join(base_dir, "arduino-cli.exe")
         if not os.path.exists(cli_path): return False, "Falta arduino-cli.exe"
