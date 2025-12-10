@@ -33,6 +33,9 @@ boolean necesitaLimpiar = true;
 unsigned long messageTimer = 0; 
 boolean showingMessage = false;
 
+// Variable para controlar si el usuario esta escribiendo
+boolean isTyping = false; 
+
 char entradaArray[5];               
 byte indiceArray = 0;
 
@@ -58,7 +61,7 @@ void showMessage(String msg, int duration);
 void force_lock() { is_locked = true; refreshUI(); }
 void force_unlock() { is_locked = false; refreshUI(); } 
 
-// TIEMPO DISPLAY (HH:MM:SS) - Para ver que el reloj camina
+// TIEMPO DISPLAY (HH:MM:SS)
 String getDisplayTime() {
   DateTime now = rtc.now();
   char buffer[9];
@@ -66,20 +69,19 @@ String getDisplayTime() {
   return String(buffer);
 }
 
-// TIEMPO LOGICA (HH:MM) - SIN SEGUNDOS
-// Esto hace que la comparacion sea valida durante todo el minuto 
+// TIEMPO LOGICA (HH:MM)
 String getLogicTime() {
   DateTime now = rtc.now();
-  char buffer[6]; // Solo 5 chars (HH:MM) + null
+  char buffer[6];
   sprintf(buffer, "%02d:%02d", now.hour(), now.minute());
   return String(buffer);
 }
 
-// --- UI ---
+// --- UI TURBO ---
 void refreshUI() {
   unsigned long currentMillis = millis();
 
-  // 1. Mensajes
+  // 1. Mensajes Temporales
   if (showingMessage) {
       if (currentMillis >= messageTimer) {
           showingMessage = false; 
@@ -88,8 +90,9 @@ void refreshUI() {
       return; 
   }
 
-  // 2. Reloj (Actualiza rapido para simulación)
-  if (ENABLE_CLOCK) {
+  // 2. Reloj (SOLO SI NO ESTAMOS ESCRIBIENDO)
+  // Esto evita que el reloj sobrescriba lo que escribes o bugee el cursor
+  if (ENABLE_CLOCK && !isTyping) {
       if (currentMillis - lastClockUpdate >= 125) { 
           lcd.setCursor(0, 0); 
           lcd.print("Hora: " + getDisplayTime());
@@ -104,8 +107,8 @@ void refreshUI() {
       digitalWrite(PIN_LOCKED, LOW); digitalWrite(PIN_UNLOCKED, HIGH);
   }
 
-  // 4. Estado
-  if (is_locked != lastLockState && indiceArray == 0) {
+  // 4. Estado Base
+  if (is_locked != lastLockState && indiceArray == 0 && !isTyping) {
       mostrarEstadoPuerta();
       lastLockState = is_locked;
   }
@@ -129,7 +132,9 @@ void showMessage(String msg, int duration) {
 void handleKeypad() {
   char tecla = teclado.getKey(); 
   if (tecla) {
+    // Si habia un mensaje, quitarlo
     if (showingMessage) { showingMessage = false; mostrarEstadoPuerta(); }
+    
     if (tecla == '#') {
       limpiarEntrada();
       showMessage("Cancelado", 200); 
@@ -139,9 +144,30 @@ void handleKeypad() {
         indiceArray--;           
         entradaArray[indiceArray] = 0;
         lcd.setCursor(indiceArray, 1); lcd.print(" "); lcd.setCursor(indiceArray, 1); 
-      } else { limpiarEntrada(); mostrarEstadoPuerta(); }
+        
+        // Si borro todo, salgo del modo escritura
+        if (indiceArray == 0) {
+             isTyping = false;
+             lcd.setCursor(0,0);
+             lcd.print("                "); // Borrar titulo de clave
+             refreshUI(); // Forzar actualización inmediata del reloj
+        }
+        
+      } else { 
+         limpiarEntrada(); 
+         mostrarEstadoPuerta(); 
+      }
     }
     else {
+        // SI ES UN NÚMERO
+        
+        // Si es el primer numero, activamos MODO ESCRITURA
+        if (!isTyping) {
+            isTyping = true;
+            lcd.setCursor(0,0);
+            lcd.print("CLAVE:          "); // Ocultamos el reloj
+        }
+
       if (necesitaLimpiar) {
           lcd.setCursor(0, 1); lcd.print("                "); lcd.setCursor(0, 1);
           necesitaLimpiar = false;
@@ -156,7 +182,11 @@ void handleKeypad() {
   }
 }
 
-void limpiarEntrada() { memset(entradaArray, 0, sizeof(entradaArray)); indiceArray = 0; }
+void limpiarEntrada() { 
+    memset(entradaArray, 0, sizeof(entradaArray)); 
+    indiceArray = 0; 
+    isTyping = false; // Al limpiar, salimos de modo escritura y vuelve el reloj
+}
 
 void verificarPassword() {
   if (strcmp(entradaArray, PASS.c_str()) == 0) {
@@ -188,8 +218,8 @@ void checkLogic() {
   is_locked = true;
   PASS = 1010;
   TIME = "00:00";
-  unlock_time = "22:17";
-  lock_time = "22:18";
+  unlock_time = "22:26";
+  lock_time = "22:27";
 
   smartDelay(10);
 MAIN_LOOP:
