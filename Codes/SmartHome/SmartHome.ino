@@ -32,14 +32,11 @@ unsigned long lastClockUpdate = 0;
 boolean necesitaLimpiar = true;
 unsigned long messageTimer = 0; 
 boolean showingMessage = false;
-
-// Variable para controlar si el usuario esta escribiendo
 boolean isTyping = false; 
 
 char entradaArray[5];               
 byte indiceArray = 0;
 
-// VARIABLES DEL COMPILADOR
 String TIME = "";
 String front_door = "";
 String inputPass = "";
@@ -69,19 +66,29 @@ String getDisplayTime() {
   return String(buffer);
 }
 
-// TIEMPO LOGICA (HH:MM)
+// --- LÓGICA DE VENTANA DE 5 SEGUNDOS ---
+// Devuelve la hora valida HH:MM SOLO si estamos en los primeros 5 segundos del minuto.
+// Si pasaron 5 segundos, devuelve una hora invalida para que la rutina automatica NO actue
+// y permita el control manual.
 String getLogicTime() {
   DateTime now = rtc.now();
-  char buffer[6];
-  sprintf(buffer, "%02d:%02d", now.hour(), now.minute());
+  char buffer[6]; 
+  
+  if (now.second() < 5) {
+      // DENTRO DE LA VENTANA: Devolvemos HH:MM normal para que coincida
+      sprintf(buffer, "%02d:%02d", now.hour(), now.minute());
+  } else {
+      // FUERA DE LA VENTANA: Devolvemos algo que nunca coincidirá con <HH:MM>
+      sprintf(buffer, "XX:XX");
+  }
+  
   return String(buffer);
 }
 
-// --- UI TURBO ---
+// --- UI TURBO AJUSTADA AL 10% ---
 void refreshUI() {
   unsigned long currentMillis = millis();
 
-  // 1. Mensajes Temporales
   if (showingMessage) {
       if (currentMillis >= messageTimer) {
           showingMessage = false; 
@@ -90,24 +97,21 @@ void refreshUI() {
       return; 
   }
 
-  // 2. Reloj (SOLO SI NO ESTAMOS ESCRIBIENDO)
-  // Esto evita que el reloj sobrescriba lo que escribes o bugee el cursor
+  // Reloj ajustado a 100ms (1000ms / 10) para el 10%
   if (ENABLE_CLOCK && !isTyping) {
-      if (currentMillis - lastClockUpdate >= 125) { 
+      if (currentMillis - lastClockUpdate >= 100) { 
           lcd.setCursor(0, 0); 
           lcd.print("Hora: " + getDisplayTime());
           lastClockUpdate = currentMillis;
       }
   }
 
-  // 3. LEDs
   if (is_locked) {
       digitalWrite(PIN_LOCKED, HIGH); digitalWrite(PIN_UNLOCKED, LOW);
   } else {
       digitalWrite(PIN_LOCKED, LOW); digitalWrite(PIN_UNLOCKED, HIGH);
   }
 
-  // 4. Estado Base
   if (is_locked != lastLockState && indiceArray == 0 && !isTyping) {
       mostrarEstadoPuerta();
       lastLockState = is_locked;
@@ -132,7 +136,6 @@ void showMessage(String msg, int duration) {
 void handleKeypad() {
   char tecla = teclado.getKey(); 
   if (tecla) {
-    // Si habia un mensaje, quitarlo
     if (showingMessage) { showingMessage = false; mostrarEstadoPuerta(); }
     
     if (tecla == '#') {
@@ -144,30 +147,20 @@ void handleKeypad() {
         indiceArray--;           
         entradaArray[indiceArray] = 0;
         lcd.setCursor(indiceArray, 1); lcd.print(" "); lcd.setCursor(indiceArray, 1); 
-        
-        // Si borro todo, salgo del modo escritura
         if (indiceArray == 0) {
              isTyping = false;
              lcd.setCursor(0,0);
-             lcd.print("                "); // Borrar titulo de clave
-             refreshUI(); // Forzar actualización inmediata del reloj
+             lcd.print("                "); 
+             refreshUI(); 
         }
-        
-      } else { 
-         limpiarEntrada(); 
-         mostrarEstadoPuerta(); 
-      }
+      } else { limpiarEntrada(); mostrarEstadoPuerta(); }
     }
     else {
-        // SI ES UN NÚMERO
-        
-        // Si es el primer numero, activamos MODO ESCRITURA
         if (!isTyping) {
             isTyping = true;
             lcd.setCursor(0,0);
-            lcd.print("CLAVE:          "); // Ocultamos el reloj
+            lcd.print("CLAVE:          "); 
         }
-
       if (necesitaLimpiar) {
           lcd.setCursor(0, 1); lcd.print("                "); lcd.setCursor(0, 1);
           necesitaLimpiar = false;
@@ -185,7 +178,7 @@ void handleKeypad() {
 void limpiarEntrada() { 
     memset(entradaArray, 0, sizeof(entradaArray)); 
     indiceArray = 0; 
-    isTyping = false; // Al limpiar, salimos de modo escritura y vuelve el reloj
+    isTyping = false; 
 }
 
 void verificarPassword() {
@@ -207,8 +200,9 @@ void checkInputs() {
   if (digitalRead(PIN_BTN_CLOSE) == HIGH) { force_lock(); delay(10); }
 }
 
+// DELAY AJUSTADO AL 10% (Divisor 10)
 void smartDelay(unsigned long ms) {
-  unsigned long adjusted_ms = ms / 8; if (adjusted_ms < 1) adjusted_ms = 1;
+  unsigned long adjusted_ms = ms / 10; if (adjusted_ms < 1) adjusted_ms = 1;
   unsigned long start = millis();
   while (millis() - start < adjusted_ms) { refreshUI(); checkInputs(); }
 } 
@@ -218,8 +212,8 @@ void checkLogic() {
   is_locked = true;
   PASS = 1010;
   TIME = "00:00";
-  unlock_time = "22:26";
-  lock_time = "22:27";
+  unlock_time = "22:36";
+  lock_time = "22:37";
 
   smartDelay(10);
 MAIN_LOOP:
