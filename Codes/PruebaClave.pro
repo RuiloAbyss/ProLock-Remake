@@ -4,7 +4,7 @@ program SmartHome {
    lock front_door() {
       state:
           boolean is_locked = false
-          $PASS = "1235"
+          $PASS = "4321"
    }
    // Rutina consolidada que maneja todas las acciones programadas.
    routine daily_schedule {
@@ -16,6 +16,7 @@ program SmartHome {
 		}
    }
 }
+
 
 
 

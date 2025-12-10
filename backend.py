@@ -2,18 +2,17 @@ import os
 import subprocess
 import sys
 
-# === CONFIGURACIÓN DE PINES (ACTUALIZADA AL NUEVO HARDWARE) ===
-# LCD (Puerto B completo): 8, 9, 10, 11, 12, 13
-# Keypad (Puerto D casi completo): 0, 1, 2, 3 (Filas), 4, 5, 6 (Columnas)
-# I2C (RTC): A4, A5 (Fijos por hardware)
-# Periféricos (Puerto C): A0, A1, A2, A3
+# === CONFIGURACIÓN DE PINES ===
+# LCD (Puerto B): 8, 9, 10, 11, 12, 13
+# Keypad (Puerto D): 0, 1, 2, 3 (Filas), 4, 5, 6 (Columnas)
+# I2C: A4, A5
+# Periféricos: A0, A1, A2, A3
 
-# Mapeo a pines lógicos de Arduino para el generador
-PIN_LOCKED_LOGIC = "A0"      # LED ROJO
-PIN_UNLOCKED_LOGIC = "A1"    # LED VERDE
-PIN_BTN_OPEN_LOGIC = "A2"    # Botón ABRIR
-PIN_BTN_CLOSE_LOGIC = "A3"   # Botón CERRAR
-PIN_MEMORY_LOGIC = "7"       # Pin Digital 7 (El único que sobró en el Puerto D para la "memoria")
+PIN_LOCKED_LOGIC = "A0"      
+PIN_UNLOCKED_LOGIC = "A1"    
+PIN_BTN_OPEN_LOGIC = "A2"    
+PIN_BTN_CLOSE_LOGIC = "A3"   
+PIN_MEMORY_LOGIC = "7"       
 
 class ArduinoGenerator:
     def __init__(self, intermediate_code, output_dir="arduino_build"):
@@ -21,8 +20,8 @@ class ArduinoGenerator:
         self.output_dir = output_dir
         self.variables = set()       
         self.global_vars = set()     
-        self.internal_vars = set()   
-        self.arduino_code = ""
+        self.internal_vars = set()
+        self.uses_clock = False 
 
     def map_operator(self, op):
         mapping = {
@@ -35,18 +34,24 @@ class ArduinoGenerator:
     def _clean_and_map(self, arg):
         if arg is None: return '""'
         clean_arg = arg.split('.')[-1] if '.' in arg else arg
-        if clean_arg == "TIME" or clean_arg == "$TIME": return "getCurrentTime()"
+        
+        # Mapeo inteligente de TIME para lecturas
+        if clean_arg == "TIME" or clean_arg == "$TIME": 
+            return "getLogicTime()" 
+            
         return clean_arg
 
     def _analyze_variables(self):
         self.global_vars.clear()
         self.internal_vars.clear()
         self.variables.clear()
+        self.uses_clock = False
         
         def is_literal_or_constant(token):
             if not isinstance(token, str) or len(token) == 0: return True
             if token[0].isdigit(): return True
             if token.startswith('"') and token.endswith('"'): return True
+            if token.startswith('<') and token.endswith('>'): return True 
             if token.endswith('s') and token[:-1].isdigit(): return True
             if token.endswith('ms') and token[:-2].isdigit(): return True
             if token in ['true', 'false']: return True
@@ -54,6 +59,11 @@ class ArduinoGenerator:
 
         for quad in self.intermediate_code:
             op, arg1, arg2, res = quad
+            
+            # Detectar si se usa el reloj en alguna parte
+            if "TIME" in str(arg1) or "TIME" in str(arg2) or "TIME" in str(res):
+                self.uses_clock = True
+
             if op == 'ASSIGN' and res:
                 res_clean = res.split('.')[-1]
                 if not is_literal_or_constant(res_clean) and not res_clean.startswith('t'):
@@ -68,7 +78,9 @@ class ArduinoGenerator:
             if res and res.startswith('t'): self.variables.add(res)
 
     def get_template_head(self):
-        # AQUÍ ESTÁ LA MAGIA: Plantilla C++ MEJORADA (UI Limpia)
+        # Define si se incluye código de reloj o no para ahorrar memoria
+        clock_def = "const boolean ENABLE_CLOCK = true;" if self.uses_clock else "const boolean ENABLE_CLOCK = false;"
+
         return f"""
 #include <Wire.h>
 #include <RTClib.h> 
@@ -77,10 +89,10 @@ class ArduinoGenerator:
 
 RTC_DS1307 rtc;
 
-// --- CONFIGURACIÓN LCD (PUERTO B) ---
+// --- LCD (Puerto B) ---
 LiquidCrystal lcd(8, 9, 10, 11, 12, 13); 
 
-// --- CONFIGURACIÓN KEYPAD (PUERTO D) ---
+// --- KEYPAD (Puerto D) ---
 const byte FILAS = 4; 
 const byte COLUMNAS = 3; 
 char keys[FILAS][COLUMNAS] = {{
@@ -94,21 +106,24 @@ byte pinesColumnas[COLUMNAS] = {{4, 5, 6}};
 
 Keypad teclado = Keypad(makeKeymap(keys), pinesFilas, pinesColumnas, FILAS, COLUMNAS);
 
-// --- PINES DE PERIFÉRICOS ---
+// --- PINES ---
 const int PIN_LOCKED = {PIN_LOCKED_LOGIC};      
 const int PIN_UNLOCKED = {PIN_UNLOCKED_LOGIC};    
 const int PIN_BTN_OPEN = {PIN_BTN_OPEN_LOGIC};    
 const int PIN_BTN_CLOSE = {PIN_BTN_CLOSE_LOGIC};   
 const int PIN_MEMORY = {PIN_MEMORY_LOGIC}; 
 
-// --- VARIABLES DEL SISTEMA ---
+// --- VARIABLES DE SISTEMA ---
+{clock_def}
 String inputString = "";
 boolean lastLockState = false; 
-String lastTimeDisplayed = "";
-boolean necesitaLimpiar = true; // Nueva bandera para controlar la UI
+unsigned long lastClockUpdate = 0; 
+boolean firstRun = true; 
+boolean necesitaLimpiar = true;
+unsigned long eventMessageTimer = 0; 
+boolean showingEvent = false;
 
-// --- LOGICA DE KEYPAD Y ARRAY ---
-const char PASS_MAESTRA[] = "1235"; // <--- OJO: Puse 1235 como pediste
+// --- BUFFER DE ENTRADA ---
 char entradaArray[5];               
 byte indiceArray = 0;
 
@@ -116,32 +131,47 @@ byte indiceArray = 0;
 VAR_DECLARATIONS
 
 // Prototipos
-void processInput(String input); 
 void limpiarEntrada();
 void verificarPassword();
-void mostrarEstadoPuerta(); // Nueva función auxiliar
+void mostrarEstadoPuerta();
+void refreshUI();
+void showEvent(String msg);
 
-// Funciones lógicas simples
+// Funciones lógicas
 void force_lock() {{ is_locked = true; refreshUI(); }}
 void force_unlock() {{ is_locked = false; refreshUI(); }} 
 
-String getCurrentTime() {{
+// TIEMPO PARA PANTALLA (HH:MM:SS)
+String getDisplayTime() {{
   DateTime now = rtc.now();
   char buffer[9];
   sprintf(buffer, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
   return String(buffer);
 }}
 
+// TIEMPO PARA LOGICA (HH:MM) - Para comparar con <22:00>
+String getLogicTime() {{
+  DateTime now = rtc.now();
+  char buffer[6];
+  sprintf(buffer, "%02d:%02d", now.hour(), now.minute());
+  return String(buffer);
+}}
+
 // --- UI ---
 void refreshUI() {{
-  String currentTime = getCurrentTime();
-  
-  if (currentTime != lastTimeDisplayed) {{ 
-      lcd.setCursor(0, 0); 
-      lcd.print("Hora: " + currentTime);
-      lastTimeDisplayed = currentTime;
+  unsigned long currentMillis = millis();
+
+  // 1. Actualizar Reloj CADA SEGUNDO (1000 ms)
+  if (ENABLE_CLOCK) {{
+      if (firstRun || (currentMillis - lastClockUpdate > 1000)) {{ 
+          lcd.setCursor(0, 0); 
+          lcd.print("Hora: " + getDisplayTime());
+          lastClockUpdate = currentMillis;
+          firstRun = false; 
+      }}
   }}
 
+  // 2. Control de LEDs
   if (is_locked) {{
       digitalWrite(PIN_LOCKED, HIGH);
       digitalWrite(PIN_UNLOCKED, LOW);
@@ -150,8 +180,14 @@ void refreshUI() {{
       digitalWrite(PIN_UNLOCKED, HIGH);
   }}
 
-  // Solo actualizamos el texto de estado si NO estamos escribiendo una clave
-  if (is_locked != lastLockState && indiceArray == 0) {{
+  // 3. Texto de Estado o Evento
+  if (showingEvent) {{
+      if (currentMillis - eventMessageTimer > 2000) {{
+          showingEvent = false; 
+          mostrarEstadoPuerta(); 
+      }}
+  }} 
+  else if (is_locked != lastLockState && indiceArray == 0) {{
       mostrarEstadoPuerta();
       lastLockState = is_locked;
   }}
@@ -161,24 +197,36 @@ void mostrarEstadoPuerta() {{
    lcd.setCursor(0, 1);
    if (is_locked) lcd.print("CERRADO         ");
    else           lcd.print("ABIERTO         ");
-   necesitaLimpiar = true; // Prepara para borrar cuando se toque una tecla
+   necesitaLimpiar = true; 
 }}
 
-// --- LÓGICA DEL KEYPAD (Array) ---
+void showEvent(String msg) {{
+    lcd.setCursor(0, 1);
+    lcd.print(msg + "                "); 
+    showingEvent = true;
+    eventMessageTimer = millis();
+}}
+
+// --- LÓGICA DEL KEYPAD ---
 void handleKeypad() {{
-  char tecla = teclado.getKey();
+  char tecla = teclado.getKey(); 
 
   if (tecla) {{
-    // CASO 1: BORRAR TODO (#)
+    if (showingEvent) {{
+        showingEvent = false;
+        mostrarEstadoPuerta();
+    }}
+    
+    // NOTA: Ya NO reseteamos lastClockUpdate aquí para que el reloj siga corriendo
+    // aunque escribas, así se siente más "vivo".
+
     if (tecla == '#') {{
       limpiarEntrada();
       lcd.setCursor(0, 1);
-      lcd.print("Cancelado       "); // Mensaje temporal
-      delay(500); // Breve pausa
-      mostrarEstadoPuerta(); // Regresar a estado original
+      lcd.print("Cancelado       ");
+      delay(500); 
+      mostrarEstadoPuerta(); 
     }}
-    
-    // CASO 2: RETROCESO (*)
     else if (tecla == '*') {{
       if (indiceArray > 0) {{
         indiceArray--;           
@@ -187,31 +235,26 @@ void handleKeypad() {{
         lcd.print(" ");     
         lcd.setCursor(indiceArray, 1); 
       }} else {{
-         // Si borramos todo, volver a mostrar el estado "CERRADO/ABIERTO"
          limpiarEntrada();
          mostrarEstadoPuerta();
       }}
     }}
-    
-    // CASO 3: NÚMEROS
     else {{
-      // Si es el PRIMER número y venimos de mostrar "CERRADO", limpiamos la línea
       if (necesitaLimpiar) {{
           lcd.setCursor(0, 1);
-          lcd.print("                "); // Borrado visual completo
+          lcd.print("                "); 
           lcd.setCursor(0, 1);
           necesitaLimpiar = false;
       }}
 
       if (indiceArray < 4) {{
         entradaArray[indiceArray] = tecla; 
-        lcd.print(tecla); // Mostrar numero
+        lcd.print(tecla); 
         indiceArray++; 
         
-        // AUTO-VALIDACIÓN
         if (indiceArray == 4) {{
           entradaArray[4] = '\\0'; 
-          delay(100); // Pausa mínima para ver el último número      
+          delay(100);       
           verificarPassword();
         }}
       }}
@@ -225,55 +268,42 @@ void limpiarEntrada() {{
 }}
 
 void verificarPassword() {{
-  // Compara el array escrito con la maestra
-  if (strcmp(entradaArray, PASS_MAESTRA) == 0) {{
+  if (strcmp(entradaArray, PASS.c_str()) == 0) {{
     lcd.setCursor(0, 1);
     lcd.print("CORRECTO!       ");
-    force_unlock(); // Cambia is_locked a false
-    delay(1000);    // 1 segundo solamente
+    force_unlock(); 
+    delay(1000);    
   }} else {{
     lcd.setCursor(0, 1);
     lcd.print("ERROR CLAVE     ");
-    delay(1000);    // 1 segundo de castigo
+    delay(1000);    
   }}
-  
-  // Restaurar la UI
   limpiarEntrada();
-  mostrarEstadoPuerta(); // Volver a poner "CERRADO/ABIERTO"
+  mostrarEstadoPuerta(); 
 }}
 
-
-// --- CHEQUEO DE HARDWARE ---
 void checkInputs() {{
   handleKeypad(); 
 
-  // Lector de Memoria (Simulado)
   if (digitalRead(PIN_MEMORY) == HIGH) {{
       lcd.setCursor(0, 1); 
       lcd.print("Leyendo Mem...");
       delay(500); 
-      // Inyectamos la contraseña maestra correcta
-      strcpy(entradaArray, PASS_MAESTRA); 
+      if (PASS.length() < 5) {{
+         strcpy(entradaArray, PASS.c_str());
+      }}
       verificarPassword();
       while(digitalRead(PIN_MEMORY) == HIGH); 
   }}
 
-  if (digitalRead(PIN_BTN_OPEN) == HIGH) {{
-      force_unlock();
-      delay(200);        
-  }}
-  
-  if (digitalRead(PIN_BTN_CLOSE) == HIGH) {{
-      force_lock(); 
-      delay(200);        
-  }}
+  if (digitalRead(PIN_BTN_OPEN) == HIGH) {{ force_unlock(); delay(200); }}
+  if (digitalRead(PIN_BTN_CLOSE) == HIGH) {{ force_lock(); delay(200); }}
 }}
 
-// --- ESPERA INTELIGENTE ---
 void smartDelay(unsigned long ms) {{
   unsigned long start = millis();
   while (millis() - start < ms) {{
-      refreshUI();
+      refreshUI(); 
       checkInputs(); 
   }}
 }} 
@@ -300,24 +330,25 @@ void smartDelay(unsigned long ms) {{
                 logic_body += f"{indent}if ({clean_arg1}) goto {res};\n"
             elif op == 'ASSIGN':
                 val = self._clean_and_map(arg1)
+                if val and val.startswith('<') and val.endswith('>'):
+                    val = '"' + val[1:-1] + '"'
+                
                 if val == '' or val is None: val = '""'
                 target = res.split('.')[-1] if '.' in res else res
                 logic_body += f"{indent}{target} = {val};\n"
             
             elif op == 'WAIT_TICK':
-                logic_body += f"{indent}smartDelay(1000);\n"
+                logic_body += f"{indent}smartDelay(100);\n"
             elif op == 'WAIT_INPUT':
                 logic_body += f"{indent}smartDelay(100);\n"
 
             elif op == 'CALL': logic_body += f"{indent}{res}();\n"
-            elif op == 'CHECK':
-                 val = self._clean_and_map(arg1)
-                 logic_body += f"{indent}{res} = {val};\n"
+            
             elif op == 'PRINT':
-                 # Convertimos PRINT a mensaje en LCD porque ya no tenemos Serial
                 val = arg1.replace('"', '')
                 if '.' in val: val = val.split('.')[-1]
-                logic_body += f"{indent}lcd.setCursor(0,1); lcd.print({val}); delay(1000);\n"
+                logic_body += f"{indent}showEvent(\"{val}\");\n"
+                
             else:
                 cpp_op = self.map_operator(op)
                 c_arg1 = self._clean_and_map(arg1)
@@ -327,33 +358,38 @@ void smartDelay(unsigned long ms) {{
         logic_body += "\n  return;\n}\n"
 
         var_decl = ""
+        # FIX: Eliminamos la duplicación, declaramos TIME solo si NO está en global_vars
+        # (Aunque TIME suele ser manejado especial, lo dejaremos que _analyze lo encuentre o no)
+        # Pero nos aseguramos de no imprimir "String TIME" manualmente abajo.
+        
         for g_var in sorted(list(self.global_vars)): var_decl += f"String {g_var} = \"\";\n"
         for i_var in sorted(list(self.internal_vars)):
             if i_var == "is_locked": var_decl += f"boolean {i_var} = true;\n"
             elif i_var not in self.global_vars: 
                 var_decl += f"String {i_var} = \"\";\n"
-        var_decl += "String TIME = \"\";\n"
+        
+        # OJO: Si el compilador NO detectó TIME (porque no se usó explícitamente pero se necesita internamente)
+        # Podríamos tener un error. Pero tu código de ejemplo USA $TIME, así que _analyze lo encontrará.
+        
         for var in sorted(list(self.variables)): var_decl += f"boolean {var} = false;\n"
 
-        # --- ENSAMBLAJE FINAL ---
         final_ino = self.get_template_head().replace('VAR_DECLARATIONS', var_decl)
         
-        # Eliminamos processInput del cuerpo principal porque ya no usaremos Serial para comandos complejos
-        # pero la dejamos declarada vacía para evitar errores de compilación si algo la llama
         final_ino += "void processInput(String input) { return; }\n"
-        
         final_ino += logic_body
         
         final_ino += "\nvoid setup() {\n"
-        # Serial eliminado para liberar D0 y D1
-        final_ino += "  lcd.begin(16, 2);\n  lcd.print(\"SISTEMA LISTO\"); delay(1000); lcd.clear();\n"
+        final_ino += "  lcd.begin(16, 2);\n  lcd.print(\"SISTEMA LISTO\"); delay(100); lcd.clear();\n"
         
         final_ino += f"  pinMode({PIN_LOCKED_LOGIC}, OUTPUT); pinMode({PIN_UNLOCKED_LOGIC}, OUTPUT);\n"
         final_ino += f"  pinMode({PIN_BTN_OPEN_LOGIC}, INPUT); pinMode({PIN_BTN_CLOSE_LOGIC}, INPUT);\n"
         final_ino += f"  pinMode({PIN_MEMORY_LOGIC}, INPUT);\n" 
         
-        final_ino += "  if (!rtc.begin()) { lcd.setCursor(0,1); lcd.print(\"ERROR RTC\"); }\n"
-        final_ino += "  if (!rtc.isrunning()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); }\n"
+        final_ino += "  if (ENABLE_CLOCK) {\n"
+        final_ino += "    if (!rtc.begin()) { lcd.setCursor(0,1); lcd.print(\"ERROR RTC\"); }\n"
+        final_ino += "    if (!rtc.isrunning()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); }\n"
+        final_ino += "  }\n"
+        
         final_ino += "  is_locked = true;\n  limpiarEntrada();\n  refreshUI();\n}\n"
         
         final_ino += """
