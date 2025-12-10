@@ -34,11 +34,8 @@ class ArduinoGenerator:
     def _clean_and_map(self, arg):
         if arg is None: return '""'
         clean_arg = arg.split('.')[-1] if '.' in arg else arg
-        
-        # Mapeo inteligente de TIME para lecturas
         if clean_arg == "TIME" or clean_arg == "$TIME": 
             return "getLogicTime()" 
-            
         return clean_arg
 
     def _analyze_variables(self):
@@ -59,11 +56,8 @@ class ArduinoGenerator:
 
         for quad in self.intermediate_code:
             op, arg1, arg2, res = quad
-            
-            # Detectar si se usa el reloj en alguna parte
             if "TIME" in str(arg1) or "TIME" in str(arg2) or "TIME" in str(res):
                 self.uses_clock = True
-
             if op == 'ASSIGN' and res:
                 res_clean = res.split('.')[-1]
                 if not is_literal_or_constant(res_clean) and not res_clean.startswith('t'):
@@ -78,7 +72,6 @@ class ArduinoGenerator:
             if res and res.startswith('t'): self.variables.add(res)
 
     def get_template_head(self):
-        # Define si se incluye código de reloj o no para ahorrar memoria
         clock_def = "const boolean ENABLE_CLOCK = true;" if self.uses_clock else "const boolean ENABLE_CLOCK = false;"
 
         return f"""
@@ -88,11 +81,8 @@ class ArduinoGenerator:
 #include <Keypad.h>
 
 RTC_DS1307 rtc;
-
-// --- LCD (Puerto B) ---
 LiquidCrystal lcd(8, 9, 10, 11, 12, 13); 
 
-// --- KEYPAD (Puerto D) ---
 const byte FILAS = 4; 
 const byte COLUMNAS = 3; 
 char keys[FILAS][COLUMNAS] = {{
@@ -103,31 +93,26 @@ char keys[FILAS][COLUMNAS] = {{
 }};
 byte pinesFilas[FILAS] = {{0, 1, 2, 3}};    
 byte pinesColumnas[COLUMNAS] = {{4, 5, 6}}; 
-
 Keypad teclado = Keypad(makeKeymap(keys), pinesFilas, pinesColumnas, FILAS, COLUMNAS);
 
-// --- PINES ---
 const int PIN_LOCKED = {PIN_LOCKED_LOGIC};      
 const int PIN_UNLOCKED = {PIN_UNLOCKED_LOGIC};    
 const int PIN_BTN_OPEN = {PIN_BTN_OPEN_LOGIC};    
 const int PIN_BTN_CLOSE = {PIN_BTN_CLOSE_LOGIC};   
 const int PIN_MEMORY = {PIN_MEMORY_LOGIC}; 
 
-// --- VARIABLES DE SISTEMA ---
 {clock_def}
-String inputString = "";
+boolean is_locked = true; 
 boolean lastLockState = false; 
 unsigned long lastClockUpdate = 0; 
-boolean firstRun = true; 
 boolean necesitaLimpiar = true;
-unsigned long eventMessageTimer = 0; 
-boolean showingEvent = false;
+unsigned long messageTimer = 0; 
+boolean showingMessage = false;
 
-// --- BUFFER DE ENTRADA ---
 char entradaArray[5];               
 byte indiceArray = 0;
 
-// Variables Generadas por el compilador
+// VARIABLES DEL COMPILADOR
 VAR_DECLARATIONS
 
 // Prototipos
@@ -135,13 +120,11 @@ void limpiarEntrada();
 void verificarPassword();
 void mostrarEstadoPuerta();
 void refreshUI();
-void showEvent(String msg);
-
-// Funciones lógicas
+void showMessage(String msg, int duration);
 void force_lock() {{ is_locked = true; refreshUI(); }}
 void force_unlock() {{ is_locked = false; refreshUI(); }} 
 
-// TIEMPO PARA PANTALLA (HH:MM:SS)
+// TIEMPO (HH:MM:SS)
 String getDisplayTime() {{
   DateTime now = rtc.now();
   char buffer[9];
@@ -149,7 +132,7 @@ String getDisplayTime() {{
   return String(buffer);
 }}
 
-// TIEMPO PARA LOGICA (HH:MM) - Para comparar con <22:00>
+// TIEMPO LOGICA (HH:MM)
 String getLogicTime() {{
   DateTime now = rtc.now();
   char buffer[6];
@@ -157,37 +140,38 @@ String getLogicTime() {{
   return String(buffer);
 }}
 
-// --- UI ---
+// --- UI TURBO (SIMULACION LENTA) ---
 void refreshUI() {{
   unsigned long currentMillis = millis();
 
-  // 1. Actualizar Reloj CADA SEGUNDO (1000 ms)
+  // 1. Mensajes Temporales
+  if (showingMessage) {{
+      if (currentMillis >= messageTimer) {{
+          showingMessage = false; 
+          mostrarEstadoPuerta(); 
+      }}
+      return; 
+  }}
+
+  // 2. Reloj ULTRA RÁPIDO para compensar simulación lenta
+  // Se actualiza cada 125ms lógicos, que serán aprox 1 seg real en tu Proteus
   if (ENABLE_CLOCK) {{
-      if (firstRun || (currentMillis - lastClockUpdate > 1000)) {{ 
+      if (currentMillis - lastClockUpdate >= 125) {{ 
           lcd.setCursor(0, 0); 
           lcd.print("Hora: " + getDisplayTime());
           lastClockUpdate = currentMillis;
-          firstRun = false; 
       }}
   }}
 
-  // 2. Control de LEDs
+  // 3. LEDs
   if (is_locked) {{
-      digitalWrite(PIN_LOCKED, HIGH);
-      digitalWrite(PIN_UNLOCKED, LOW);
+      digitalWrite(PIN_LOCKED, HIGH); digitalWrite(PIN_UNLOCKED, LOW);
   }} else {{
-      digitalWrite(PIN_LOCKED, LOW);
-      digitalWrite(PIN_UNLOCKED, HIGH);
+      digitalWrite(PIN_LOCKED, LOW); digitalWrite(PIN_UNLOCKED, HIGH);
   }}
 
-  // 3. Texto de Estado o Evento
-  if (showingEvent) {{
-      if (currentMillis - eventMessageTimer > 2000) {{
-          showingEvent = false; 
-          mostrarEstadoPuerta(); 
-      }}
-  }} 
-  else if (is_locked != lastLockState && indiceArray == 0) {{
+  // 4. Texto Estado Base
+  if (is_locked != lastLockState && indiceArray == 0) {{
       mostrarEstadoPuerta();
       lastLockState = is_locked;
   }}
@@ -200,40 +184,32 @@ void mostrarEstadoPuerta() {{
    necesitaLimpiar = true; 
 }}
 
-void showEvent(String msg) {{
+void showMessage(String msg, int duration) {{
     lcd.setCursor(0, 1);
     lcd.print(msg + "                "); 
-    showingEvent = true;
-    eventMessageTimer = millis();
+    showingMessage = true;
+    messageTimer = millis() + duration; 
 }}
 
-// --- LÓGICA DEL KEYPAD ---
+// --- KEYPAD ---
 void handleKeypad() {{
   char tecla = teclado.getKey(); 
 
   if (tecla) {{
-    if (showingEvent) {{
-        showingEvent = false;
+    if (showingMessage) {{
+        showingMessage = false;
         mostrarEstadoPuerta();
     }}
     
-    // NOTA: Ya NO reseteamos lastClockUpdate aquí para que el reloj siga corriendo
-    // aunque escribas, así se siente más "vivo".
-
     if (tecla == '#') {{
       limpiarEntrada();
-      lcd.setCursor(0, 1);
-      lcd.print("Cancelado       ");
-      delay(500); 
-      mostrarEstadoPuerta(); 
+      showMessage("Cancelado", 100); // 100ms
     }}
     else if (tecla == '*') {{
       if (indiceArray > 0) {{
         indiceArray--;           
         entradaArray[indiceArray] = 0;
-        lcd.setCursor(indiceArray, 1); 
-        lcd.print(" ");     
-        lcd.setCursor(indiceArray, 1); 
+        lcd.setCursor(indiceArray, 1); lcd.print(" "); lcd.setCursor(indiceArray, 1); 
       }} else {{
          limpiarEntrada();
          mostrarEstadoPuerta();
@@ -241,9 +217,7 @@ void handleKeypad() {{
     }}
     else {{
       if (necesitaLimpiar) {{
-          lcd.setCursor(0, 1);
-          lcd.print("                "); 
-          lcd.setCursor(0, 1);
+          lcd.setCursor(0, 1); lcd.print("                "); lcd.setCursor(0, 1);
           necesitaLimpiar = false;
       }}
 
@@ -254,8 +228,7 @@ void handleKeypad() {{
         
         if (indiceArray == 4) {{
           entradaArray[4] = '\\0'; 
-          delay(100);       
-          verificarPassword();
+          verificarPassword(); 
         }}
       }}
     }}
@@ -269,40 +242,36 @@ void limpiarEntrada() {{
 
 void verificarPassword() {{
   if (strcmp(entradaArray, PASS.c_str()) == 0) {{
-    lcd.setCursor(0, 1);
-    lcd.print("CORRECTO!       ");
     force_unlock(); 
-    delay(1000);    
+    showMessage("BIENVENIDO!", 250); // Mensaje super corto (simulado)
   }} else {{
-    lcd.setCursor(0, 1);
-    lcd.print("ERROR CLAVE     ");
-    delay(1000);    
+    showMessage("ERROR CLAVE", 250);
   }}
   limpiarEntrada();
-  mostrarEstadoPuerta(); 
 }}
 
 void checkInputs() {{
   handleKeypad(); 
 
   if (digitalRead(PIN_MEMORY) == HIGH) {{
-      lcd.setCursor(0, 1); 
-      lcd.print("Leyendo Mem...");
-      delay(500); 
-      if (PASS.length() < 5) {{
-         strcpy(entradaArray, PASS.c_str());
-      }}
+      showMessage("Leyendo Mem...", 200);
+      if (PASS.length() < 5) strcpy(entradaArray, PASS.c_str());
       verificarPassword();
       while(digitalRead(PIN_MEMORY) == HIGH); 
   }}
 
-  if (digitalRead(PIN_BTN_OPEN) == HIGH) {{ force_unlock(); delay(200); }}
-  if (digitalRead(PIN_BTN_CLOSE) == HIGH) {{ force_lock(); delay(200); }}
+  if (digitalRead(PIN_BTN_OPEN) == HIGH) {{ force_unlock(); delay(10); }}
+  if (digitalRead(PIN_BTN_CLOSE) == HIGH) {{ force_lock(); delay(10); }}
 }}
 
+// Delay inteligente ULTRA CORTO
 void smartDelay(unsigned long ms) {{
+  // Dividimos todo el tiempo entre 8 para compensar lag
+  unsigned long adjusted_ms = ms / 8; 
+  if (adjusted_ms < 1) adjusted_ms = 1;
+  
   unsigned long start = millis();
-  while (millis() - start < ms) {{
+  while (millis() - start < adjusted_ms) {{
       refreshUI(); 
       checkInputs(); 
   }}
@@ -332,13 +301,13 @@ void smartDelay(unsigned long ms) {{
                 val = self._clean_and_map(arg1)
                 if val and val.startswith('<') and val.endswith('>'):
                     val = '"' + val[1:-1] + '"'
-                
                 if val == '' or val is None: val = '""'
                 target = res.split('.')[-1] if '.' in res else res
                 logic_body += f"{indent}{target} = {val};\n"
             
+            # DELAYS AJUSTADOS AUTOMÁTICAMENTE
             elif op == 'WAIT_TICK':
-                logic_body += f"{indent}smartDelay(100);\n"
+                logic_body += f"{indent}smartDelay(1000); // Se dividirá entre 8 en smartDelay\n" 
             elif op == 'WAIT_INPUT':
                 logic_body += f"{indent}smartDelay(100);\n"
 
@@ -347,7 +316,7 @@ void smartDelay(unsigned long ms) {{
             elif op == 'PRINT':
                 val = arg1.replace('"', '')
                 if '.' in val: val = val.split('.')[-1]
-                logic_body += f"{indent}showEvent(\"{val}\");\n"
+                logic_body += f"{indent}showMessage(\"{val}\", 250);\n"
                 
             else:
                 cpp_op = self.map_operator(op)
@@ -358,19 +327,10 @@ void smartDelay(unsigned long ms) {{
         logic_body += "\n  return;\n}\n"
 
         var_decl = ""
-        # FIX: Eliminamos la duplicación, declaramos TIME solo si NO está en global_vars
-        # (Aunque TIME suele ser manejado especial, lo dejaremos que _analyze lo encuentre o no)
-        # Pero nos aseguramos de no imprimir "String TIME" manualmente abajo.
-        
         for g_var in sorted(list(self.global_vars)): var_decl += f"String {g_var} = \"\";\n"
         for i_var in sorted(list(self.internal_vars)):
-            if i_var == "is_locked": var_decl += f"boolean {i_var} = true;\n"
-            elif i_var not in self.global_vars: 
+            if i_var != "is_locked" and i_var not in self.global_vars: 
                 var_decl += f"String {i_var} = \"\";\n"
-        
-        # OJO: Si el compilador NO detectó TIME (porque no se usó explícitamente pero se necesita internamente)
-        # Podríamos tener un error. Pero tu código de ejemplo USA $TIME, así que _analyze lo encontrará.
-        
         for var in sorted(list(self.variables)): var_decl += f"boolean {var} = false;\n"
 
         final_ino = self.get_template_head().replace('VAR_DECLARATIONS', var_decl)
@@ -379,7 +339,7 @@ void smartDelay(unsigned long ms) {{
         final_ino += logic_body
         
         final_ino += "\nvoid setup() {\n"
-        final_ino += "  lcd.begin(16, 2);\n  lcd.print(\"SISTEMA LISTO\"); delay(100); lcd.clear();\n"
+        final_ino += "  lcd.begin(16, 2);\n  lcd.print(\"SISTEMA LISTO\"); delay(50); lcd.clear();\n"
         
         final_ino += f"  pinMode({PIN_LOCKED_LOGIC}, OUTPUT); pinMode({PIN_UNLOCKED_LOGIC}, OUTPUT);\n"
         final_ino += f"  pinMode({PIN_BTN_OPEN_LOGIC}, INPUT); pinMode({PIN_BTN_CLOSE_LOGIC}, INPUT);\n"

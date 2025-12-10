@@ -5,11 +5,8 @@
 #include <Keypad.h>
 
 RTC_DS1307 rtc;
-
-// --- LCD (Puerto B) ---
 LiquidCrystal lcd(8, 9, 10, 11, 12, 13); 
 
-// --- KEYPAD (Puerto D) ---
 const byte FILAS = 4; 
 const byte COLUMNAS = 3; 
 char keys[FILAS][COLUMNAS] = {
@@ -20,36 +17,30 @@ char keys[FILAS][COLUMNAS] = {
 };
 byte pinesFilas[FILAS] = {0, 1, 2, 3};    
 byte pinesColumnas[COLUMNAS] = {4, 5, 6}; 
-
 Keypad teclado = Keypad(makeKeymap(keys), pinesFilas, pinesColumnas, FILAS, COLUMNAS);
 
-// --- PINES ---
 const int PIN_LOCKED = A0;      
 const int PIN_UNLOCKED = A1;    
 const int PIN_BTN_OPEN = A2;    
 const int PIN_BTN_CLOSE = A3;   
 const int PIN_MEMORY = 7; 
 
-// --- VARIABLES DE SISTEMA ---
 const boolean ENABLE_CLOCK = true;
-String inputString = "";
+boolean is_locked = true; 
 boolean lastLockState = false; 
 unsigned long lastClockUpdate = 0; 
-boolean firstRun = true; 
 boolean necesitaLimpiar = true;
-unsigned long eventMessageTimer = 0; 
-boolean showingEvent = false;
+unsigned long messageTimer = 0; 
+boolean showingMessage = false;
 
-// --- BUFFER DE ENTRADA ---
 char entradaArray[5];               
 byte indiceArray = 0;
 
-// Variables Generadas por el compilador
+// VARIABLES DEL COMPILADOR
 String TIME = "";
 String front_door = "";
 String inputPass = "";
 String PASS = "";
-boolean is_locked = true;
 String lock_time = "";
 String report_time = "";
 String unlock_time = "";
@@ -63,13 +54,11 @@ void limpiarEntrada();
 void verificarPassword();
 void mostrarEstadoPuerta();
 void refreshUI();
-void showEvent(String msg);
-
-// Funciones lógicas
+void showMessage(String msg, int duration);
 void force_lock() { is_locked = true; refreshUI(); }
 void force_unlock() { is_locked = false; refreshUI(); } 
 
-// TIEMPO PARA PANTALLA (HH:MM:SS)
+// TIEMPO (HH:MM:SS)
 String getDisplayTime() {
   DateTime now = rtc.now();
   char buffer[9];
@@ -77,7 +66,7 @@ String getDisplayTime() {
   return String(buffer);
 }
 
-// TIEMPO PARA LOGICA (HH:MM) - Para comparar con <22:00>
+// TIEMPO LOGICA (HH:MM)
 String getLogicTime() {
   DateTime now = rtc.now();
   char buffer[6];
@@ -85,37 +74,38 @@ String getLogicTime() {
   return String(buffer);
 }
 
-// --- UI ---
+// --- UI TURBO (SIMULACION LENTA) ---
 void refreshUI() {
   unsigned long currentMillis = millis();
 
-  // 1. Actualizar Reloj CADA SEGUNDO (1000 ms)
+  // 1. Mensajes Temporales
+  if (showingMessage) {
+      if (currentMillis >= messageTimer) {
+          showingMessage = false; 
+          mostrarEstadoPuerta(); 
+      }
+      return; 
+  }
+
+  // 2. Reloj ULTRA RÁPIDO para compensar simulación lenta
+  // Se actualiza cada 125ms lógicos, que serán aprox 1 seg real en tu Proteus
   if (ENABLE_CLOCK) {
-      if (firstRun || (currentMillis - lastClockUpdate > 1000)) { 
+      if (currentMillis - lastClockUpdate >= 125) { 
           lcd.setCursor(0, 0); 
           lcd.print("Hora: " + getDisplayTime());
           lastClockUpdate = currentMillis;
-          firstRun = false; 
       }
   }
 
-  // 2. Control de LEDs
+  // 3. LEDs
   if (is_locked) {
-      digitalWrite(PIN_LOCKED, HIGH);
-      digitalWrite(PIN_UNLOCKED, LOW);
+      digitalWrite(PIN_LOCKED, HIGH); digitalWrite(PIN_UNLOCKED, LOW);
   } else {
-      digitalWrite(PIN_LOCKED, LOW);
-      digitalWrite(PIN_UNLOCKED, HIGH);
+      digitalWrite(PIN_LOCKED, LOW); digitalWrite(PIN_UNLOCKED, HIGH);
   }
 
-  // 3. Texto de Estado o Evento
-  if (showingEvent) {
-      if (currentMillis - eventMessageTimer > 2000) {
-          showingEvent = false; 
-          mostrarEstadoPuerta(); 
-      }
-  } 
-  else if (is_locked != lastLockState && indiceArray == 0) {
+  // 4. Texto Estado Base
+  if (is_locked != lastLockState && indiceArray == 0) {
       mostrarEstadoPuerta();
       lastLockState = is_locked;
   }
@@ -128,40 +118,32 @@ void mostrarEstadoPuerta() {
    necesitaLimpiar = true; 
 }
 
-void showEvent(String msg) {
+void showMessage(String msg, int duration) {
     lcd.setCursor(0, 1);
     lcd.print(msg + "                "); 
-    showingEvent = true;
-    eventMessageTimer = millis();
+    showingMessage = true;
+    messageTimer = millis() + duration; 
 }
 
-// --- LÓGICA DEL KEYPAD ---
+// --- KEYPAD ---
 void handleKeypad() {
   char tecla = teclado.getKey(); 
 
   if (tecla) {
-    if (showingEvent) {
-        showingEvent = false;
+    if (showingMessage) {
+        showingMessage = false;
         mostrarEstadoPuerta();
     }
     
-    // NOTA: Ya NO reseteamos lastClockUpdate aquí para que el reloj siga corriendo
-    // aunque escribas, así se siente más "vivo".
-
     if (tecla == '#') {
       limpiarEntrada();
-      lcd.setCursor(0, 1);
-      lcd.print("Cancelado       ");
-      delay(500); 
-      mostrarEstadoPuerta(); 
+      showMessage("Cancelado", 100); // 100ms
     }
     else if (tecla == '*') {
       if (indiceArray > 0) {
         indiceArray--;           
         entradaArray[indiceArray] = 0;
-        lcd.setCursor(indiceArray, 1); 
-        lcd.print(" ");     
-        lcd.setCursor(indiceArray, 1); 
+        lcd.setCursor(indiceArray, 1); lcd.print(" "); lcd.setCursor(indiceArray, 1); 
       } else {
          limpiarEntrada();
          mostrarEstadoPuerta();
@@ -169,9 +151,7 @@ void handleKeypad() {
     }
     else {
       if (necesitaLimpiar) {
-          lcd.setCursor(0, 1);
-          lcd.print("                "); 
-          lcd.setCursor(0, 1);
+          lcd.setCursor(0, 1); lcd.print("                "); lcd.setCursor(0, 1);
           necesitaLimpiar = false;
       }
 
@@ -182,8 +162,7 @@ void handleKeypad() {
         
         if (indiceArray == 4) {
           entradaArray[4] = '\0'; 
-          delay(100);       
-          verificarPassword();
+          verificarPassword(); 
         }
       }
     }
@@ -197,40 +176,36 @@ void limpiarEntrada() {
 
 void verificarPassword() {
   if (strcmp(entradaArray, PASS.c_str()) == 0) {
-    lcd.setCursor(0, 1);
-    lcd.print("CORRECTO!       ");
     force_unlock(); 
-    delay(1000);    
+    showMessage("BIENVENIDO!", 250); // Mensaje super corto (simulado)
   } else {
-    lcd.setCursor(0, 1);
-    lcd.print("ERROR CLAVE     ");
-    delay(1000);    
+    showMessage("ERROR CLAVE", 250);
   }
   limpiarEntrada();
-  mostrarEstadoPuerta(); 
 }
 
 void checkInputs() {
   handleKeypad(); 
 
   if (digitalRead(PIN_MEMORY) == HIGH) {
-      lcd.setCursor(0, 1); 
-      lcd.print("Leyendo Mem...");
-      delay(500); 
-      if (PASS.length() < 5) {
-         strcpy(entradaArray, PASS.c_str());
-      }
+      showMessage("Leyendo Mem...", 200);
+      if (PASS.length() < 5) strcpy(entradaArray, PASS.c_str());
       verificarPassword();
       while(digitalRead(PIN_MEMORY) == HIGH); 
   }
 
-  if (digitalRead(PIN_BTN_OPEN) == HIGH) { force_unlock(); delay(200); }
-  if (digitalRead(PIN_BTN_CLOSE) == HIGH) { force_lock(); delay(200); }
+  if (digitalRead(PIN_BTN_OPEN) == HIGH) { force_unlock(); delay(10); }
+  if (digitalRead(PIN_BTN_CLOSE) == HIGH) { force_lock(); delay(10); }
 }
 
+// Delay inteligente ULTRA CORTO
 void smartDelay(unsigned long ms) {
+  // Dividimos todo el tiempo entre 8 para compensar lag
+  unsigned long adjusted_ms = ms / 8; 
+  if (adjusted_ms < 1) adjusted_ms = 1;
+  
   unsigned long start = millis();
-  while (millis() - start < ms) {
+  while (millis() - start < adjusted_ms) {
       refreshUI(); 
       checkInputs(); 
   }
@@ -246,7 +221,7 @@ void checkLogic() {
 
   smartDelay(10);
 MAIN_LOOP:
-  smartDelay(100);
+  smartDelay(1000); // Se dividirá entre 8 en smartDelay
   t1 = (getLogicTime() == lock_time);
   if (t1) goto L1;
   goto L2;
@@ -274,7 +249,7 @@ L6:
 
 void setup() {
   lcd.begin(16, 2);
-  lcd.print("SISTEMA LISTO"); delay(100); lcd.clear();
+  lcd.print("SISTEMA LISTO"); delay(50); lcd.clear();
   pinMode(A0, OUTPUT); pinMode(A1, OUTPUT);
   pinMode(A2, INPUT); pinMode(A3, INPUT);
   pinMode(7, INPUT);
