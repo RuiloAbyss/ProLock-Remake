@@ -13,6 +13,7 @@ const int PIN_BTN_OPEN = A2;    // BOTÓN ABRIR (R1) -> PC2/A2
 const int PIN_BTN_CLOSE = A3;   // BOTÓN CERRAR (R4) -> PC3/A3
 
 String inputString = "";
+boolean inputReady = false;
 boolean lastLockState = false; 
 String lastTimeDisplayed = "";
 
@@ -116,9 +117,15 @@ void processInput(String input) {
   int separatorIndex = input.indexOf('=');
   if (separatorIndex == -1) {
       inputString = input;
-      Serial.println("[INPUT] Recibido: " + inputString);
-      lcd.setCursor(0, 1); lcd.print("Pass: " + inputString + "    ");
-      smartDelay(500); 
+      // Añadimos la lógica de control de longitud, por ejemplo, 4 caracteres
+      if (inputString.length() >= 4) { // CAMBIO CLAVE: Checar longitud
+          Serial.println("[INPUT] Recibido y listo para procesar: " + inputString);
+          inputReady = true; // Establecer bandera
+          lcd.setCursor(0, 1); lcd.print("Procesando...   ");
+          smartDelay(500); 
+      } else {
+          Serial.println("[ERROR] Entrada incompleta.");
+      }
       return;
   }
   
@@ -172,4 +179,5 @@ void loop() {
   
   // 3. Limpieza
   if (inputString != "") inputString = ""; 
+  if (inputReady) inputReady = false; // <-- LIMPIAR LA BANDERA DESPUÉS DE LA LÓGICA
 }
