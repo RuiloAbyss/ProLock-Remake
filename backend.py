@@ -124,7 +124,7 @@ void showMessage(String msg, int duration);
 void force_lock() {{ is_locked = true; refreshUI(); }}
 void force_unlock() {{ is_locked = false; refreshUI(); }} 
 
-// TIEMPO (HH:MM:SS)
+// TIEMPO DISPLAY (HH:MM:SS) - Para ver que el reloj camina
 String getDisplayTime() {{
   DateTime now = rtc.now();
   char buffer[9];
@@ -132,19 +132,20 @@ String getDisplayTime() {{
   return String(buffer);
 }}
 
-// TIEMPO LOGICA (HH:MM)
+// TIEMPO LOGICA (HH:MM) - SIN SEGUNDOS
+// Esto hace que la comparacion sea valida durante todo el minuto 
 String getLogicTime() {{
   DateTime now = rtc.now();
-  char buffer[6];
+  char buffer[6]; // Solo 5 chars (HH:MM) + null
   sprintf(buffer, "%02d:%02d", now.hour(), now.minute());
   return String(buffer);
 }}
 
-// --- UI TURBO (SIMULACION LENTA) ---
+// --- UI ---
 void refreshUI() {{
   unsigned long currentMillis = millis();
 
-  // 1. Mensajes Temporales
+  // 1. Mensajes
   if (showingMessage) {{
       if (currentMillis >= messageTimer) {{
           showingMessage = false; 
@@ -153,8 +154,7 @@ void refreshUI() {{
       return; 
   }}
 
-  // 2. Reloj ULTRA RÁPIDO para compensar simulación lenta
-  // Se actualiza cada 125ms lógicos, que serán aprox 1 seg real en tu Proteus
+  // 2. Reloj (Actualiza rapido para simulación)
   if (ENABLE_CLOCK) {{
       if (currentMillis - lastClockUpdate >= 125) {{ 
           lcd.setCursor(0, 0); 
@@ -170,7 +170,7 @@ void refreshUI() {{
       digitalWrite(PIN_LOCKED, LOW); digitalWrite(PIN_UNLOCKED, HIGH);
   }}
 
-  // 4. Texto Estado Base
+  // 4. Estado
   if (is_locked != lastLockState && indiceArray == 0) {{
       mostrarEstadoPuerta();
       lastLockState = is_locked;
@@ -194,87 +194,59 @@ void showMessage(String msg, int duration) {{
 // --- KEYPAD ---
 void handleKeypad() {{
   char tecla = teclado.getKey(); 
-
   if (tecla) {{
-    if (showingMessage) {{
-        showingMessage = false;
-        mostrarEstadoPuerta();
-    }}
-    
+    if (showingMessage) {{ showingMessage = false; mostrarEstadoPuerta(); }}
     if (tecla == '#') {{
       limpiarEntrada();
-      showMessage("Cancelado", 100); // 100ms
+      showMessage("Cancelado", 200); 
     }}
     else if (tecla == '*') {{
       if (indiceArray > 0) {{
         indiceArray--;           
         entradaArray[indiceArray] = 0;
         lcd.setCursor(indiceArray, 1); lcd.print(" "); lcd.setCursor(indiceArray, 1); 
-      }} else {{
-         limpiarEntrada();
-         mostrarEstadoPuerta();
-      }}
+      }} else {{ limpiarEntrada(); mostrarEstadoPuerta(); }}
     }}
     else {{
       if (necesitaLimpiar) {{
           lcd.setCursor(0, 1); lcd.print("                "); lcd.setCursor(0, 1);
           necesitaLimpiar = false;
       }}
-
       if (indiceArray < 4) {{
         entradaArray[indiceArray] = tecla; 
         lcd.print(tecla); 
         indiceArray++; 
-        
-        if (indiceArray == 4) {{
-          entradaArray[4] = '\\0'; 
-          verificarPassword(); 
-        }}
+        if (indiceArray == 4) {{ entradaArray[4] = '\\0'; verificarPassword(); }}
       }}
     }}
   }}
 }}
 
-void limpiarEntrada() {{
-  memset(entradaArray, 0, sizeof(entradaArray)); 
-  indiceArray = 0;                          
-}}
+void limpiarEntrada() {{ memset(entradaArray, 0, sizeof(entradaArray)); indiceArray = 0; }}
 
 void verificarPassword() {{
   if (strcmp(entradaArray, PASS.c_str()) == 0) {{
-    force_unlock(); 
-    showMessage("BIENVENIDO!", 250); // Mensaje super corto (simulado)
-  }} else {{
-    showMessage("ERROR CLAVE", 250);
-  }}
+    force_unlock(); showMessage("BIENVENIDO!", 500); 
+  }} else {{ showMessage("ERROR CLAVE", 500); }}
   limpiarEntrada();
 }}
 
 void checkInputs() {{
   handleKeypad(); 
-
   if (digitalRead(PIN_MEMORY) == HIGH) {{
-      showMessage("Leyendo Mem...", 200);
+      showMessage("Leyendo Mem...", 300);
       if (PASS.length() < 5) strcpy(entradaArray, PASS.c_str());
       verificarPassword();
       while(digitalRead(PIN_MEMORY) == HIGH); 
   }}
-
   if (digitalRead(PIN_BTN_OPEN) == HIGH) {{ force_unlock(); delay(10); }}
   if (digitalRead(PIN_BTN_CLOSE) == HIGH) {{ force_lock(); delay(10); }}
 }}
 
-// Delay inteligente ULTRA CORTO
 void smartDelay(unsigned long ms) {{
-  // Dividimos todo el tiempo entre 8 para compensar lag
-  unsigned long adjusted_ms = ms / 8; 
-  if (adjusted_ms < 1) adjusted_ms = 1;
-  
+  unsigned long adjusted_ms = ms / 8; if (adjusted_ms < 1) adjusted_ms = 1;
   unsigned long start = millis();
-  while (millis() - start < adjusted_ms) {{
-      refreshUI(); 
-      checkInputs(); 
-  }}
+  while (millis() - start < adjusted_ms) {{ refreshUI(); checkInputs(); }}
 }} 
 """
     
@@ -299,15 +271,19 @@ void smartDelay(unsigned long ms) {{
                 logic_body += f"{indent}if ({clean_arg1}) goto {res};\n"
             elif op == 'ASSIGN':
                 val = self._clean_and_map(arg1)
+                
+                # --- MODIFICADO: MANTENEMOS EL FORMATO HH:MM ---
+                # Si viene <19:58>, quitamos los <> y lo dejamos como string "19:58"
+                # Ya NO agregamos :00 para que coincida con getLogicTime()
                 if val and val.startswith('<') and val.endswith('>'):
                     val = '"' + val[1:-1] + '"'
+                
                 if val == '' or val is None: val = '""'
                 target = res.split('.')[-1] if '.' in res else res
                 logic_body += f"{indent}{target} = {val};\n"
             
-            # DELAYS AJUSTADOS AUTOMÁTICAMENTE
             elif op == 'WAIT_TICK':
-                logic_body += f"{indent}smartDelay(1000); // Se dividirá entre 8 en smartDelay\n" 
+                logic_body += f"{indent}smartDelay(1000);\n" 
             elif op == 'WAIT_INPUT':
                 logic_body += f"{indent}smartDelay(100);\n"
 
@@ -354,6 +330,7 @@ void smartDelay(unsigned long ms) {{
         
         final_ino += """
 void loop() {
+  refreshUI(); 
   checkInputs();
   checkLogic();
 }
