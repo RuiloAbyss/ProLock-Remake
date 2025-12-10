@@ -68,7 +68,7 @@ class ArduinoGenerator:
             if res and res.startswith('t'): self.variables.add(res)
 
     def get_template_head(self):
-        # AQUÍ ESTÁ LA MAGIA: Plantilla C++ actualizada con lógica de Keypad y Array
+        # AQUÍ ESTÁ LA MAGIA: Plantilla C++ MEJORADA (UI Limpia)
         return f"""
 #include <Wire.h>
 #include <RTClib.h> 
@@ -78,7 +78,6 @@ class ArduinoGenerator:
 RTC_DS1307 rtc;
 
 // --- CONFIGURACIÓN LCD (PUERTO B) ---
-// RS=8, E=9, D4=10, D5=11, D6=12, D7=13
 LiquidCrystal lcd(8, 9, 10, 11, 12, 13); 
 
 // --- CONFIGURACIÓN KEYPAD (PUERTO D) ---
@@ -90,7 +89,6 @@ char keys[FILAS][COLUMNAS] = {{
   {{'7','8','9'}},
   {{'*','0','#'}}
 }};
-// Pines: D0, D1, D2, D3 (Filas) - D4, D5, D6 (Columnas)
 byte pinesFilas[FILAS] = {{0, 1, 2, 3}};    
 byte pinesColumnas[COLUMNAS] = {{4, 5, 6}}; 
 
@@ -107,10 +105,11 @@ const int PIN_MEMORY = {PIN_MEMORY_LOGIC};
 String inputString = "";
 boolean lastLockState = false; 
 String lastTimeDisplayed = "";
+boolean necesitaLimpiar = true; // Nueva bandera para controlar la UI
 
 // --- LOGICA DE KEYPAD Y ARRAY ---
-const char PASS_MAESTRA[] = "1234"; // Contraseña Hardcodeada en Arduino
-char entradaArray[5];               // Buffer para 4 digitos + NULL
+const char PASS_MAESTRA[] = "1235"; // <--- OJO: Puse 1235 como pediste
+char entradaArray[5];               
 byte indiceArray = 0;
 
 // Variables Generadas por el compilador
@@ -120,6 +119,7 @@ VAR_DECLARATIONS
 void processInput(String input); 
 void limpiarEntrada();
 void verificarPassword();
+void mostrarEstadoPuerta(); // Nueva función auxiliar
 
 // Funciones lógicas simples
 void force_lock() {{ is_locked = true; refreshUI(); }}
@@ -136,14 +136,12 @@ String getCurrentTime() {{
 void refreshUI() {{
   String currentTime = getCurrentTime();
   
-  // Actualizar hora solo si cambió (Línea 0)
   if (currentTime != lastTimeDisplayed) {{ 
       lcd.setCursor(0, 0); 
       lcd.print("Hora: " + currentTime);
       lastTimeDisplayed = currentTime;
   }}
 
-  // Control de LEDs
   if (is_locked) {{
       digitalWrite(PIN_LOCKED, HIGH);
       digitalWrite(PIN_UNLOCKED, LOW);
@@ -152,17 +150,18 @@ void refreshUI() {{
       digitalWrite(PIN_UNLOCKED, HIGH);
   }}
 
-  // Actualizar estado en LCD (Línea 1, parte derecha) si cambió
-  if (is_locked != lastLockState) {{
-       // No borramos toda la linea para no borrar lo que el usuario escribe
-       // Solo actualizamos si no se está escribiendo nada
-       if (indiceArray == 0) {{
-          lcd.setCursor(0, 1);
-          if (is_locked) lcd.print("CERRADO         ");
-          else           lcd.print("ABIERTO         ");
-       }}
+  // Solo actualizamos el texto de estado si NO estamos escribiendo una clave
+  if (is_locked != lastLockState && indiceArray == 0) {{
+      mostrarEstadoPuerta();
       lastLockState = is_locked;
   }}
+}}
+
+void mostrarEstadoPuerta() {{
+   lcd.setCursor(0, 1);
+   if (is_locked) lcd.print("CERRADO         ");
+   else           lcd.print("ABIERTO         ");
+   necesitaLimpiar = true; // Prepara para borrar cuando se toque una tecla
 }}
 
 // --- LÓGICA DEL KEYPAD (Array) ---
@@ -174,11 +173,9 @@ void handleKeypad() {{
     if (tecla == '#') {{
       limpiarEntrada();
       lcd.setCursor(0, 1);
-      lcd.print("Borrado...      ");
-      delay(500);
-      lcd.setCursor(0, 1);
-      if (is_locked) lcd.print("CERRADO         ");
-      else           lcd.print("ABIERTO         ");
+      lcd.print("Cancelado       "); // Mensaje temporal
+      delay(500); // Breve pausa
+      mostrarEstadoPuerta(); // Regresar a estado original
     }}
     
     // CASO 2: RETROCESO (*)
@@ -186,29 +183,35 @@ void handleKeypad() {{
       if (indiceArray > 0) {{
         indiceArray--;           
         entradaArray[indiceArray] = 0;
-        
-        // Efecto visual de borrar caracter
         lcd.setCursor(indiceArray, 1); 
         lcd.print(" ");     
         lcd.setCursor(indiceArray, 1); 
+      }} else {{
+         // Si borramos todo, volver a mostrar el estado "CERRADO/ABIERTO"
+         limpiarEntrada();
+         mostrarEstadoPuerta();
       }}
     }}
     
     // CASO 3: NÚMEROS
     else {{
+      // Si es el PRIMER número y venimos de mostrar "CERRADO", limpiamos la línea
+      if (necesitaLimpiar) {{
+          lcd.setCursor(0, 1);
+          lcd.print("                "); // Borrado visual completo
+          lcd.setCursor(0, 1);
+          necesitaLimpiar = false;
+      }}
+
       if (indiceArray < 4) {{
         entradaArray[indiceArray] = tecla; 
-        
-        // Mostrar asterisco o numero (Visual)
-        lcd.setCursor(indiceArray, 1); 
-        lcd.print(tecla);        
-        
+        lcd.print(tecla); // Mostrar numero
         indiceArray++; 
         
-        // AUTO-VALIDACIÓN AL LLEGAR A 4
+        // AUTO-VALIDACIÓN
         if (indiceArray == 4) {{
           entradaArray[4] = '\\0'; 
-          delay(200);        
+          delay(100); // Pausa mínima para ver el último número      
           verificarPassword();
         }}
       }}
@@ -226,39 +229,35 @@ void verificarPassword() {{
   if (strcmp(entradaArray, PASS_MAESTRA) == 0) {{
     lcd.setCursor(0, 1);
     lcd.print("CORRECTO!       ");
-    force_unlock(); // Cambia la variable global is_locked
-    delay(1500);
+    force_unlock(); // Cambia is_locked a false
+    delay(1000);    // 1 segundo solamente
   }} else {{
     lcd.setCursor(0, 1);
     lcd.print("ERROR CLAVE     ");
-    delay(1500);
+    delay(1000);    // 1 segundo de castigo
   }}
   
   // Restaurar la UI
   limpiarEntrada();
-  lcd.setCursor(0, 1);
-  if (is_locked) lcd.print("CERRADO         ");
-  else           lcd.print("ABIERTO         ");
+  mostrarEstadoPuerta(); // Volver a poner "CERRADO/ABIERTO"
 }}
 
 
 // --- CHEQUEO DE HARDWARE ---
 void checkInputs() {{
-  
-  handleKeypad(); // Revisar el teclado en cada ciclo
+  handleKeypad(); 
 
-  // Lector de Memoria (Pin 7)
+  // Lector de Memoria (Simulado)
   if (digitalRead(PIN_MEMORY) == HIGH) {{
       lcd.setCursor(0, 1); 
       lcd.print("Leyendo Mem...");
-      delay(800); 
-      // Inyectamos contraseña maestra via software
-      strcpy(entradaArray, "1234");
+      delay(500); 
+      // Inyectamos la contraseña maestra correcta
+      strcpy(entradaArray, PASS_MAESTRA); 
       verificarPassword();
       while(digitalRead(PIN_MEMORY) == HIGH); 
   }}
 
-  // Botones Físicos (Manuales)
   if (digitalRead(PIN_BTN_OPEN) == HIGH) {{
       force_unlock();
       delay(200);        
@@ -276,7 +275,6 @@ void smartDelay(unsigned long ms) {{
   while (millis() - start < ms) {{
       refreshUI();
       checkInputs(); 
-      // (Nota: Se eliminó Serial para liberar Pines 0 y 1 para el Keypad)
   }}
 }} 
 """
