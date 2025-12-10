@@ -2,27 +2,18 @@ import os
 import subprocess
 import sys
 
-# === CONFIGURACIÓN DE PINES CORREGIDA BASADA EN EL DIAGRAMA ===
-# U1 (DS1307) usa A4 (SDA) y A5 (SCL) automáticamente con la librería Wire/RTClib.
-# El LCD está bien cableado, PERO tus LEDs y Botones están en los pines analógicos.
-# El mapeo de pines analógicos en Arduino es A0, A1, A2, A3, etc.
-PIN_LOCKED_CORRECT = 14  # Pin D0 (PD0/RXD) <-- El pin 14 es el PC0/ADC0. Mejor usar A0 si están en A
-PIN_UNLOCKED_CORRECT = 15 # Pin D1 (PD1/TXD) <-- El pin 15 es el PC1/ADC1. Mejor usar A1
-PIN_BTN_OPEN_CORRECT = 16 # Pin D2 (PD2/INT0) <-- El pin 16 es el PC2/ADC2. Mejor usar A2
-PIN_BTN_CLOSE_CORRECT = 17 # Pin D3 (PD3/INT1) <-- El pin 17 es el PC3/ADC3. Mejor usar A3
+# === CONFIGURACIÓN DE PINES (ACTUALIZADA AL NUEVO HARDWARE) ===
+# LCD (Puerto B completo): 8, 9, 10, 11, 12, 13
+# Keypad (Puerto D casi completo): 0, 1, 2, 3 (Filas), 4, 5, 6 (Columnas)
+# I2C (RTC): A4, A5 (Fijos por hardware)
+# Periféricos (Puerto C): A0, A1, A2, A3
 
-# Nota sobre el diagrama: Los pines 23-26 del ATmega328P son PC0-PC3. 
-# En Arduino IDE, estos se nombran A0, A1, A2, A3. Usaremos A0-A3 para mayor claridad.
-# LED_ROJO (D1) va a PC0 (Pin 23) -> A0
-# LED_VERDE (D2) va a PC1 (Pin 24) -> A1
-# BOTÓN CERRAR (R4) va a PC3 (Pin 26) -> A3
-# BOTÓN ABRIR (R1) va a PC2 (Pin 25) -> A2
-
-# Mapeo a pines lógicos de Arduino (A0, A1, A2, A3)
-PIN_LOCKED_LOGIC = "A0"
-PIN_UNLOCKED_LOGIC = "A1"
-PIN_BTN_OPEN_LOGIC = "A2"
-PIN_BTN_CLOSE_LOGIC = "A3"
+# Mapeo a pines lógicos de Arduino para el generador
+PIN_LOCKED_LOGIC = "A0"      # LED ROJO
+PIN_UNLOCKED_LOGIC = "A1"    # LED VERDE
+PIN_BTN_OPEN_LOGIC = "A2"    # Botón ABRIR
+PIN_BTN_CLOSE_LOGIC = "A3"   # Botón CERRAR
+PIN_MEMORY_LOGIC = "7"       # Pin Digital 7 (El único que sobró en el Puerto D para la "memoria")
 
 class ArduinoGenerator:
     def __init__(self, intermediate_code, output_dir="arduino_build"):
@@ -44,7 +35,6 @@ class ArduinoGenerator:
     def _clean_and_map(self, arg):
         if arg is None: return '""'
         clean_arg = arg.split('.')[-1] if '.' in arg else arg
-        if clean_arg == "inputPass": return "inputString" 
         if clean_arg == "TIME" or clean_arg == "$TIME": return "getCurrentTime()"
         return clean_arg
 
@@ -52,67 +42,108 @@ class ArduinoGenerator:
         self.global_vars.clear()
         self.internal_vars.clear()
         self.variables.clear()
+        
+        def is_literal_or_constant(token):
+            if not isinstance(token, str) or len(token) == 0: return True
+            if token[0].isdigit(): return True
+            if token.startswith('"') and token.endswith('"'): return True
+            if token.endswith('s') and token[:-1].isdigit(): return True
+            if token.endswith('ms') and token[:-2].isdigit(): return True
+            if token in ['true', 'false']: return True
+            return False
+
         for quad in self.intermediate_code:
             op, arg1, arg2, res = quad
-            if op == 'ASSIGN':
-                if '.' in res: self.internal_vars.add(res.split('.')[-1])
-                elif not res.startswith('t') and res != 'true' and res != 'false':
-                    if res != 'inputPass': self.global_vars.add(res)
+            if op == 'ASSIGN' and res:
+                res_clean = res.split('.')[-1]
+                if not is_literal_or_constant(res_clean) and not res_clean.startswith('t'):
+                    if '.' in res: self.internal_vars.add(res_clean)
+                    else: self.global_vars.add(res_clean)
+            for arg in [arg1, arg2]:
+                if arg and not arg.startswith('t'):
+                    arg_clean = arg.split('.')[-1]
+                    if not is_literal_or_constant(arg_clean):
+                        if arg_clean not in self.internal_vars:
+                            self.global_vars.add(arg_clean) 
             if res and res.startswith('t'): self.variables.add(res)
 
     def get_template_head(self):
-        # --- AÑADIDA DECLARACIÓN ANTICIPADA DE processInput ---
+        # AQUÍ ESTÁ LA MAGIA: Plantilla C++ actualizada con lógica de Keypad y Array
         return f"""
 #include <Wire.h>
 #include <RTClib.h> 
 #include <LiquidCrystal.h>
+#include <Keypad.h>
 
 RTC_DS1307 rtc;
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2); // Pines D4-D7 del LCD a D5-D2 del uC
 
-// --- PINES CORREGIDOS SEGÚN DIAGRAMA PROTEUS ---
-const int PIN_LOCKED = {PIN_LOCKED_LOGIC};      // LED ROJO (D1) -> PC0/A0
-const int PIN_UNLOCKED = {PIN_UNLOCKED_LOGIC};    // LED VERDE (D2) -> PC1/A1
-const int PIN_BTN_OPEN = {PIN_BTN_OPEN_LOGIC};    // BOTÓN ABRIR (R1) -> PC2/A2
-const int PIN_BTN_CLOSE = {PIN_BTN_CLOSE_LOGIC};   // BOTÓN CERRAR (R4) -> PC3/A3
+// --- CONFIGURACIÓN LCD (PUERTO B) ---
+// RS=8, E=9, D4=10, D5=11, D6=12, D7=13
+LiquidCrystal lcd(8, 9, 10, 11, 12, 13); 
 
+// --- CONFIGURACIÓN KEYPAD (PUERTO D) ---
+const byte FILAS = 4; 
+const byte COLUMNAS = 3; 
+char keys[FILAS][COLUMNAS] = {{
+  {{'1','2','3'}},
+  {{'4','5','6'}},
+  {{'7','8','9'}},
+  {{'*','0','#'}}
+}};
+// Pines: D0, D1, D2, D3 (Filas) - D4, D5, D6 (Columnas)
+byte pinesFilas[FILAS] = {{0, 1, 2, 3}};    
+byte pinesColumnas[COLUMNAS] = {{4, 5, 6}}; 
+
+Keypad teclado = Keypad(makeKeymap(keys), pinesFilas, pinesColumnas, FILAS, COLUMNAS);
+
+// --- PINES DE PERIFÉRICOS ---
+const int PIN_LOCKED = {PIN_LOCKED_LOGIC};      
+const int PIN_UNLOCKED = {PIN_UNLOCKED_LOGIC};    
+const int PIN_BTN_OPEN = {PIN_BTN_OPEN_LOGIC};    
+const int PIN_BTN_CLOSE = {PIN_BTN_CLOSE_LOGIC};   
+const int PIN_MEMORY = {PIN_MEMORY_LOGIC}; 
+
+// --- VARIABLES DEL SISTEMA ---
 String inputString = "";
-boolean inputReady = false;
 boolean lastLockState = false; 
 String lastTimeDisplayed = "";
 
-// Variables Generadas
+// --- LOGICA DE KEYPAD Y ARRAY ---
+const char PASS_MAESTRA[] = "1234"; // Contraseña Hardcodeada en Arduino
+char entradaArray[5];               // Buffer para 4 digitos + NULL
+byte indiceArray = 0;
+
+// Variables Generadas por el compilador
 VAR_DECLARATIONS
 
-// Prototipo de función para el manejo serial (SOLUCIONA EL ERROR 'not declared in this scope')
+// Prototipos
 void processInput(String input); 
+void limpiarEntrada();
+void verificarPassword();
 
-// Funciones lógicas simples (DECLARADAS ANTES DE USARSE)
+// Funciones lógicas simples
 void force_lock() {{ is_locked = true; refreshUI(); }}
-void force_unlock() {{ is_locked = false; refreshUI(); }}
-
+void force_unlock() {{ is_locked = false; refreshUI(); }} 
 
 String getCurrentTime() {{
-  // Lógica para obtener la hora del RTC (DS1307)
   DateTime now = rtc.now();
   char buffer[9];
   sprintf(buffer, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
   return String(buffer);
 }}
 
-// --- ACTUALIZADOR DE INTERFAZ ---
+// --- UI ---
 void refreshUI() {{
-  // 1. Actualizar Hora
   String currentTime = getCurrentTime();
-  // El tiempo se actualiza cada segundo (WAIT_TICK)
+  
+  // Actualizar hora solo si cambió (Línea 0)
   if (currentTime != lastTimeDisplayed) {{ 
       lcd.setCursor(0, 0); 
-      // Mostramos la hora en la primera línea
       lcd.print("Hora: " + currentTime);
       lastTimeDisplayed = currentTime;
   }}
 
-  // 2. Actualizar LEDs y Estado LCD (LED HIGH = Encendido)
+  // Control de LEDs
   if (is_locked) {{
       digitalWrite(PIN_LOCKED, HIGH);
       digitalWrite(PIN_UNLOCKED, LOW);
@@ -121,32 +152,121 @@ void refreshUI() {{
       digitalWrite(PIN_UNLOCKED, HIGH);
   }}
 
-  // 3. Actualizar mensaje de estado solo si cambia
+  // Actualizar estado en LCD (Línea 1, parte derecha) si cambió
   if (is_locked != lastLockState) {{
-      lcd.setCursor(0, 1);
-      if (is_locked) lcd.print("CERRADO         ");
-      else           lcd.print("ABIERTO         ");
+       // No borramos toda la linea para no borrar lo que el usuario escribe
+       // Solo actualizamos si no se está escribiendo nada
+       if (indiceArray == 0) {{
+          lcd.setCursor(0, 1);
+          if (is_locked) lcd.print("CERRADO         ");
+          else           lcd.print("ABIERTO         ");
+       }}
       lastLockState = is_locked;
   }}
 }}
 
-// --- CHEQUEO DE BOTONES (SIN CONDICIONES - FUERZA BRUTA) ---
-void checkButtons() {{
-  // Los botones R1 y R4 están cableados como PULL-DOWN en el diagrama (conectados a VCC a través de la resistencia)
-  // Por lo tanto, se leen HIGH cuando se presionan.
-  
-  // Botón ABRIR (R1)
-  if (digitalRead(PIN_BTN_OPEN) == HIGH) {{
-      Serial.println("[DIAGNOSTICO] Boton ABRIR detectado");
-      force_unlock(); // Llama a la acción de apertura
-      delay(500);        
+// --- LÓGICA DEL KEYPAD (Array) ---
+void handleKeypad() {{
+  char tecla = teclado.getKey();
+
+  if (tecla) {{
+    // CASO 1: BORRAR TODO (#)
+    if (tecla == '#') {{
+      limpiarEntrada();
+      lcd.setCursor(0, 1);
+      lcd.print("Borrado...      ");
+      delay(500);
+      lcd.setCursor(0, 1);
+      if (is_locked) lcd.print("CERRADO         ");
+      else           lcd.print("ABIERTO         ");
+    }}
+    
+    // CASO 2: RETROCESO (*)
+    else if (tecla == '*') {{
+      if (indiceArray > 0) {{
+        indiceArray--;           
+        entradaArray[indiceArray] = 0;
+        
+        // Efecto visual de borrar caracter
+        lcd.setCursor(indiceArray, 1); 
+        lcd.print(" ");     
+        lcd.setCursor(indiceArray, 1); 
+      }}
+    }}
+    
+    // CASO 3: NÚMEROS
+    else {{
+      if (indiceArray < 4) {{
+        entradaArray[indiceArray] = tecla; 
+        
+        // Mostrar asterisco o numero (Visual)
+        lcd.setCursor(indiceArray, 1); 
+        lcd.print(tecla);        
+        
+        indiceArray++; 
+        
+        // AUTO-VALIDACIÓN AL LLEGAR A 4
+        if (indiceArray == 4) {{
+          entradaArray[4] = '\\0'; 
+          delay(200);        
+          verificarPassword();
+        }}
+      }}
+    }}
+  }}
+}}
+
+void limpiarEntrada() {{
+  memset(entradaArray, 0, sizeof(entradaArray)); 
+  indiceArray = 0;                          
+}}
+
+void verificarPassword() {{
+  // Compara el array escrito con la maestra
+  if (strcmp(entradaArray, PASS_MAESTRA) == 0) {{
+    lcd.setCursor(0, 1);
+    lcd.print("CORRECTO!       ");
+    force_unlock(); // Cambia la variable global is_locked
+    delay(1500);
+  }} else {{
+    lcd.setCursor(0, 1);
+    lcd.print("ERROR CLAVE     ");
+    delay(1500);
   }}
   
-  // Botón CERRAR (R4)
+  // Restaurar la UI
+  limpiarEntrada();
+  lcd.setCursor(0, 1);
+  if (is_locked) lcd.print("CERRADO         ");
+  else           lcd.print("ABIERTO         ");
+}}
+
+
+// --- CHEQUEO DE HARDWARE ---
+void checkInputs() {{
+  
+  handleKeypad(); // Revisar el teclado en cada ciclo
+
+  // Lector de Memoria (Pin 7)
+  if (digitalRead(PIN_MEMORY) == HIGH) {{
+      lcd.setCursor(0, 1); 
+      lcd.print("Leyendo Mem...");
+      delay(800); 
+      // Inyectamos contraseña maestra via software
+      strcpy(entradaArray, "1234");
+      verificarPassword();
+      while(digitalRead(PIN_MEMORY) == HIGH); 
+  }}
+
+  // Botones Físicos (Manuales)
+  if (digitalRead(PIN_BTN_OPEN) == HIGH) {{
+      force_unlock();
+      delay(200);        
+  }}
+  
   if (digitalRead(PIN_BTN_CLOSE) == HIGH) {{
-      Serial.println("[DIAGNOSTICO] Boton CERRAR detectado");
-      force_lock(); // Llama a la acción de cierre
-      delay(500);        
+      force_lock(); 
+      delay(200);        
   }}
 }}
 
@@ -155,15 +275,8 @@ void smartDelay(unsigned long ms) {{
   unsigned long start = millis();
   while (millis() - start < ms) {{
       refreshUI();
-      checkButtons(); 
-      
-      // Chequear Terminal
-      if (Serial.available() > 0) {{
-          // Usamos el valor numérico ASCII para evitar errores de escape.
-          String raw = Serial.readStringUntil(13); 
-          if (Serial.peek() == 10) Serial.read(); 
-          processInput(raw);
-      }}
+      checkInputs(); 
+      // (Nota: Se eliminó Serial para liberar Pines 0 y 1 para el Keypad)
   }}
 }} 
 """
@@ -174,7 +287,6 @@ void smartDelay(unsigned long ms) {{
         self.internal_vars.update(known_internals)
         self.global_vars = self.global_vars - self.internal_vars
         
-        # --- GENERACIÓN DE LÓGICA ---
         logic_body = "void checkLogic() {\n"
         indent = "  "
         for quad in self.intermediate_code:
@@ -194,7 +306,6 @@ void smartDelay(unsigned long ms) {{
                 target = res.split('.')[-1] if '.' in res else res
                 logic_body += f"{indent}{target} = {val};\n"
             
-            # --- USO DE SMART DELAY ---
             elif op == 'WAIT_TICK':
                 logic_body += f"{indent}smartDelay(1000);\n"
             elif op == 'WAIT_INPUT':
@@ -205,9 +316,10 @@ void smartDelay(unsigned long ms) {{
                  val = self._clean_and_map(arg1)
                  logic_body += f"{indent}{res} = {val};\n"
             elif op == 'PRINT':
+                 # Convertimos PRINT a mensaje en LCD porque ya no tenemos Serial
                 val = arg1.replace('"', '')
                 if '.' in val: val = val.split('.')[-1]
-                logic_body += f"{indent}Serial.println({val});\n"
+                logic_body += f"{indent}lcd.setCursor(0,1); lcd.print({val}); delay(1000);\n"
             else:
                 cpp_op = self.map_operator(op)
                 c_arg1 = self._clean_and_map(arg1)
@@ -220,76 +332,36 @@ void smartDelay(unsigned long ms) {{
         for g_var in sorted(list(self.global_vars)): var_decl += f"String {g_var} = \"\";\n"
         for i_var in sorted(list(self.internal_vars)):
             if i_var == "is_locked": var_decl += f"boolean {i_var} = true;\n"
-            else: var_decl += f"String {i_var} = \"\";\n"
-        var_decl += "String inputPass = \"\";\nString TIME = \"\";\n"
+            elif i_var not in self.global_vars: 
+                var_decl += f"String {i_var} = \"\";\n"
+        var_decl += "String TIME = \"\";\n"
         for var in sorted(list(self.variables)): var_decl += f"boolean {var} = false;\n"
-
-        process_input_func = """
-void processInput(String input) {
-  input.trim();
-  int separatorIndex = input.indexOf('=');
-  if (separatorIndex == -1) {
-      inputString = input;
-      // Añadimos la lógica de control de longitud, por ejemplo, 4 caracteres
-      if (inputString.length() >= 4) { // CAMBIO CLAVE: Checar longitud
-          Serial.println("[INPUT] Recibido y listo para procesar: " + inputString);
-          inputReady = true; // Establecer bandera
-          lcd.setCursor(0, 1); lcd.print("Procesando...   ");
-          smartDelay(500); 
-      } else {
-          Serial.println("[ERROR] Entrada incompleta.");
-      }
-      return;
-  }
-  
-  // ASEGÚRATE QUE ESTAS LÍNEAS ESTÉN AQUÍ DENTRO DE processInput:
-  String varName = input.substring(0, separatorIndex);
-  String varValue = input.substring(separatorIndex + 1);
-  varName.trim(); varValue.trim();
-
-"""
-        first = True
-        hay_vars = False
-        for g_var in sorted(list(self.global_vars)):
-            hay_vars = True
-            else_prefix = "else " if not first else ""
-            process_input_func += f"""  {else_prefix}if (varName == "{g_var}") {{ {g_var} = varValue; Serial.println("[OK] Actualizado."); }}\n"""
-            first = False
-        if hay_vars: process_input_func += """  else { Serial.println("[ERROR] Protegido."); }\n}\n"""
-        else: process_input_func += """  Serial.println("[ERROR] Sin globales.");\n}\n"""
 
         # --- ENSAMBLAJE FINAL ---
         final_ino = self.get_template_head().replace('VAR_DECLARATIONS', var_decl)
         
-        # AÑADIMOS la llave de cierre de smartDelay() que faltaba al final del get_template_head
-        final_ino += "\n" 
+        # Eliminamos processInput del cuerpo principal porque ya no usaremos Serial para comandos complejos
+        # pero la dejamos declarada vacía para evitar errores de compilación si algo la llama
+        final_ino += "void processInput(String input) { return; }\n"
         
-        final_ino += process_input_func
         final_ino += logic_body
         
-        final_ino += "\nvoid setup() {\n  Serial.begin(9600);\n  Serial.setTimeout(50);\n"
-        final_ino += "  lcd.begin(16, 2);\n  lcd.print(\"PROLOCK SYSTEM\");\n"
+        final_ino += "\nvoid setup() {\n"
+        # Serial eliminado para liberar D0 y D1
+        final_ino += "  lcd.begin(16, 2);\n  lcd.print(\"SISTEMA LISTO\"); delay(1000); lcd.clear();\n"
         
-        # --- CONFIGURACIÓN DE PINES EN SETUP ---
         final_ino += f"  pinMode({PIN_LOCKED_LOGIC}, OUTPUT); pinMode({PIN_UNLOCKED_LOGIC}, OUTPUT);\n"
         final_ino += f"  pinMode({PIN_BTN_OPEN_LOGIC}, INPUT); pinMode({PIN_BTN_CLOSE_LOGIC}, INPUT);\n"
+        final_ino += f"  pinMode({PIN_MEMORY_LOGIC}, INPUT);\n" 
         
         final_ino += "  if (!rtc.begin()) { lcd.setCursor(0,1); lcd.print(\"ERROR RTC\"); }\n"
         final_ino += "  if (!rtc.isrunning()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); }\n"
-        final_ino += "  is_locked = true;\n  refreshUI();\n}\n"
+        final_ino += "  is_locked = true;\n  limpiarEntrada();\n  refreshUI();\n}\n"
         
-        # --- LOOP PRINCIPAL ESTABLE ---
         final_ino += """
 void loop() {
-  // 1. Revisar Botones Físicos (Prioridad)
-  checkButtons();
-
-  // 2. Ejecutar Lógica Automática
+  checkInputs();
   checkLogic();
-  
-  // 3. Limpieza
-  if (inputString != "") inputString = ""; 
-  if (inputReady) inputReady = false; // <-- LIMPIAR LA BANDERA DESPUÉS DE LA LÓGICA
 }
 """
         if ruta_personalizada:

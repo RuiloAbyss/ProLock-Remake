@@ -2,61 +2,86 @@
 #include <Wire.h>
 #include <RTClib.h> 
 #include <LiquidCrystal.h>
+#include <Keypad.h>
 
 RTC_DS1307 rtc;
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2); // Pines D4-D7 del LCD a D5-D2 del uC
 
-// --- PINES CORREGIDOS SEGÚN DIAGRAMA PROTEUS ---
-const int PIN_LOCKED = A0;      // LED ROJO (D1) -> PC0/A0
-const int PIN_UNLOCKED = A1;    // LED VERDE (D2) -> PC1/A1
-const int PIN_BTN_OPEN = A2;    // BOTÓN ABRIR (R1) -> PC2/A2
-const int PIN_BTN_CLOSE = A3;   // BOTÓN CERRAR (R4) -> PC3/A3
+// --- CONFIGURACIÓN LCD (PUERTO B) ---
+// RS=8, E=9, D4=10, D5=11, D6=12, D7=13
+LiquidCrystal lcd(8, 9, 10, 11, 12, 13); 
 
+// --- CONFIGURACIÓN KEYPAD (PUERTO D) ---
+const byte FILAS = 4; 
+const byte COLUMNAS = 3; 
+char keys[FILAS][COLUMNAS] = {
+  {'1','2','3'},
+  {'4','5','6'},
+  {'7','8','9'},
+  {'*','0','#'}
+};
+// Pines: D0, D1, D2, D3 (Filas) - D4, D5, D6 (Columnas)
+byte pinesFilas[FILAS] = {0, 1, 2, 3};    
+byte pinesColumnas[COLUMNAS] = {4, 5, 6}; 
+
+Keypad teclado = Keypad(makeKeymap(keys), pinesFilas, pinesColumnas, FILAS, COLUMNAS);
+
+// --- PINES DE PERIFÉRICOS ---
+const int PIN_LOCKED = A0;      
+const int PIN_UNLOCKED = A1;    
+const int PIN_BTN_OPEN = A2;    
+const int PIN_BTN_CLOSE = A3;   
+const int PIN_MEMORY = 7; 
+
+// --- VARIABLES DEL SISTEMA ---
 String inputString = "";
-boolean inputReady = false;
 boolean lastLockState = false; 
 String lastTimeDisplayed = "";
 
-// Variables Generadas
+// --- LOGICA DE KEYPAD Y ARRAY ---
+const char PASS_MAESTRA[] = "1234"; // Contraseña Hardcodeada en Arduino
+char entradaArray[5];               // Buffer para 4 digitos + NULL
+byte indiceArray = 0;
+
+// Variables Generadas por el compilador
+String front_door = "";
+String inputPass = "";
 String PASS = "";
 boolean is_locked = true;
 String lock_time = "";
 String report_time = "";
 String unlock_time = "";
-String inputPass = "";
 String TIME = "";
 boolean t1 = false;
 
 
-// Prototipo de función para el manejo serial (SOLUCIONA EL ERROR 'not declared in this scope')
+// Prototipos
 void processInput(String input); 
+void limpiarEntrada();
+void verificarPassword();
 
-// Funciones lógicas simples (DECLARADAS ANTES DE USARSE)
+// Funciones lógicas simples
 void force_lock() { is_locked = true; refreshUI(); }
-void force_unlock() { is_locked = false; refreshUI(); }
-
+void force_unlock() { is_locked = false; refreshUI(); } 
 
 String getCurrentTime() {
-  // Lógica para obtener la hora del RTC (DS1307)
   DateTime now = rtc.now();
   char buffer[9];
   sprintf(buffer, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
   return String(buffer);
 }
 
-// --- ACTUALIZADOR DE INTERFAZ ---
+// --- UI ---
 void refreshUI() {
-  // 1. Actualizar Hora
   String currentTime = getCurrentTime();
-  // El tiempo se actualiza cada segundo (WAIT_TICK)
+  
+  // Actualizar hora solo si cambió (Línea 0)
   if (currentTime != lastTimeDisplayed) { 
       lcd.setCursor(0, 0); 
-      // Mostramos la hora en la primera línea
       lcd.print("Hora: " + currentTime);
       lastTimeDisplayed = currentTime;
   }
 
-  // 2. Actualizar LEDs y Estado LCD (LED HIGH = Encendido)
+  // Control de LEDs
   if (is_locked) {
       digitalWrite(PIN_LOCKED, HIGH);
       digitalWrite(PIN_UNLOCKED, LOW);
@@ -65,32 +90,121 @@ void refreshUI() {
       digitalWrite(PIN_UNLOCKED, HIGH);
   }
 
-  // 3. Actualizar mensaje de estado solo si cambia
+  // Actualizar estado en LCD (Línea 1, parte derecha) si cambió
   if (is_locked != lastLockState) {
-      lcd.setCursor(0, 1);
-      if (is_locked) lcd.print("CERRADO         ");
-      else           lcd.print("ABIERTO         ");
+       // No borramos toda la linea para no borrar lo que el usuario escribe
+       // Solo actualizamos si no se está escribiendo nada
+       if (indiceArray == 0) {
+          lcd.setCursor(0, 1);
+          if (is_locked) lcd.print("CERRADO         ");
+          else           lcd.print("ABIERTO         ");
+       }
       lastLockState = is_locked;
   }
 }
 
-// --- CHEQUEO DE BOTONES (SIN CONDICIONES - FUERZA BRUTA) ---
-void checkButtons() {
-  // Los botones R1 y R4 están cableados como PULL-DOWN en el diagrama (conectados a VCC a través de la resistencia)
-  // Por lo tanto, se leen HIGH cuando se presionan.
-  
-  // Botón ABRIR (R1)
-  if (digitalRead(PIN_BTN_OPEN) == HIGH) {
-      Serial.println("[DIAGNOSTICO] Boton ABRIR detectado");
-      force_unlock(); // Llama a la acción de apertura
-      delay(500);        
+// --- LÓGICA DEL KEYPAD (Array) ---
+void handleKeypad() {
+  char tecla = teclado.getKey();
+
+  if (tecla) {
+    // CASO 1: BORRAR TODO (#)
+    if (tecla == '#') {
+      limpiarEntrada();
+      lcd.setCursor(0, 1);
+      lcd.print("Borrado...      ");
+      delay(500);
+      lcd.setCursor(0, 1);
+      if (is_locked) lcd.print("CERRADO         ");
+      else           lcd.print("ABIERTO         ");
+    }
+    
+    // CASO 2: RETROCESO (*)
+    else if (tecla == '*') {
+      if (indiceArray > 0) {
+        indiceArray--;           
+        entradaArray[indiceArray] = 0;
+        
+        // Efecto visual de borrar caracter
+        lcd.setCursor(indiceArray, 1); 
+        lcd.print(" ");     
+        lcd.setCursor(indiceArray, 1); 
+      }
+    }
+    
+    // CASO 3: NÚMEROS
+    else {
+      if (indiceArray < 4) {
+        entradaArray[indiceArray] = tecla; 
+        
+        // Mostrar asterisco o numero (Visual)
+        lcd.setCursor(indiceArray, 1); 
+        lcd.print(tecla);        
+        
+        indiceArray++; 
+        
+        // AUTO-VALIDACIÓN AL LLEGAR A 4
+        if (indiceArray == 4) {
+          entradaArray[4] = '\0'; 
+          delay(200);        
+          verificarPassword();
+        }
+      }
+    }
+  }
+}
+
+void limpiarEntrada() {
+  memset(entradaArray, 0, sizeof(entradaArray)); 
+  indiceArray = 0;                          
+}
+
+void verificarPassword() {
+  // Compara el array escrito con la maestra
+  if (strcmp(entradaArray, PASS_MAESTRA) == 0) {
+    lcd.setCursor(0, 1);
+    lcd.print("CORRECTO!       ");
+    force_unlock(); // Cambia la variable global is_locked
+    delay(1500);
+  } else {
+    lcd.setCursor(0, 1);
+    lcd.print("ERROR CLAVE     ");
+    delay(1500);
   }
   
-  // Botón CERRAR (R4)
+  // Restaurar la UI
+  limpiarEntrada();
+  lcd.setCursor(0, 1);
+  if (is_locked) lcd.print("CERRADO         ");
+  else           lcd.print("ABIERTO         ");
+}
+
+
+// --- CHEQUEO DE HARDWARE ---
+void checkInputs() {
+  
+  handleKeypad(); // Revisar el teclado en cada ciclo
+
+  // Lector de Memoria (Pin 7)
+  if (digitalRead(PIN_MEMORY) == HIGH) {
+      lcd.setCursor(0, 1); 
+      lcd.print("Leyendo Mem...");
+      delay(800); 
+      // Inyectamos contraseña maestra via software
+      strcpy(entradaArray, "1234");
+      verificarPassword();
+      while(digitalRead(PIN_MEMORY) == HIGH); 
+  }
+
+  // Botones Físicos (Manuales)
+  if (digitalRead(PIN_BTN_OPEN) == HIGH) {
+      force_unlock();
+      delay(200);        
+  }
+  
   if (digitalRead(PIN_BTN_CLOSE) == HIGH) {
-      Serial.println("[DIAGNOSTICO] Boton CERRAR detectado");
-      force_lock(); // Llama a la acción de cierre
-      delay(500);        
+      force_lock(); 
+      delay(200);        
   }
 }
 
@@ -99,43 +213,11 @@ void smartDelay(unsigned long ms) {
   unsigned long start = millis();
   while (millis() - start < ms) {
       refreshUI();
-      checkButtons(); 
-      
-      // Chequear Terminal
-      if (Serial.available() > 0) {
-          // Usamos el valor numérico ASCII para evitar errores de escape.
-          String raw = Serial.readStringUntil(13); 
-          if (Serial.peek() == 10) Serial.read(); 
-          processInput(raw);
-      }
+      checkInputs(); 
+      // (Nota: Se eliminó Serial para liberar Pines 0 y 1 para el Keypad)
   }
 } 
-
-
-void processInput(String input) {
-  input.trim();
-  int separatorIndex = input.indexOf('=');
-  if (separatorIndex == -1) {
-      inputString = input;
-      // Añadimos la lógica de control de longitud, por ejemplo, 4 caracteres
-      if (inputString.length() >= 4) { // CAMBIO CLAVE: Checar longitud
-          Serial.println("[INPUT] Recibido y listo para procesar: " + inputString);
-          inputReady = true; // Establecer bandera
-          lcd.setCursor(0, 1); lcd.print("Procesando...   ");
-          smartDelay(500); 
-      } else {
-          Serial.println("[ERROR] Entrada incompleta.");
-      }
-      return;
-  }
-  
-  // ASEGÚRATE QUE ESTAS LÍNEAS ESTÉN AQUÍ DENTRO DE processInput:
-  String varName = input.substring(0, separatorIndex);
-  String varValue = input.substring(separatorIndex + 1);
-  varName.trim(); varValue.trim();
-
-  Serial.println("[ERROR] Sin globales.");
-}
+void processInput(String input) { return; }
 void checkLogic() {
   inputPass = "";
   is_locked = false;
@@ -145,7 +227,7 @@ void checkLogic() {
 MAIN_LOOP:
   smartDelay(1000);
   smartDelay(100);
-  t1 = (PASS == inputString);
+  t1 = (PASS == inputPass);
   if (t1) goto L1;
   goto L2;
 L1:
@@ -158,26 +240,19 @@ L2:
 }
 
 void setup() {
-  Serial.begin(9600);
-  Serial.setTimeout(50);
   lcd.begin(16, 2);
-  lcd.print("PROLOCK SYSTEM");
+  lcd.print("SISTEMA LISTO"); delay(1000); lcd.clear();
   pinMode(A0, OUTPUT); pinMode(A1, OUTPUT);
   pinMode(A2, INPUT); pinMode(A3, INPUT);
+  pinMode(7, INPUT);
   if (!rtc.begin()) { lcd.setCursor(0,1); lcd.print("ERROR RTC"); }
   if (!rtc.isrunning()) { rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); }
   is_locked = true;
+  limpiarEntrada();
   refreshUI();
 }
 
 void loop() {
-  // 1. Revisar Botones Físicos (Prioridad)
-  checkButtons();
-
-  // 2. Ejecutar Lógica Automática
+  checkInputs();
   checkLogic();
-  
-  // 3. Limpieza
-  if (inputString != "") inputString = ""; 
-  if (inputReady) inputReady = false; // <-- LIMPIAR LA BANDERA DESPUÉS DE LA LÓGICA
 }
