@@ -5,7 +5,7 @@ import sys
 # === CONFIGURACIÓN DE PINES ===
 # LCD (Puerto B): 8, 9, 10, 11, 12, 13
 # Keypad (Puerto D): 0, 1, 2, 3 (Filas), 4, 5, 6 (Columnas)
-# I2C: A4, A5
+# I2C (Reloj): A4, A5
 # Periféricos: A0, A1, A2, A3
 
 PIN_LOCKED_LOGIC = "A0"      
