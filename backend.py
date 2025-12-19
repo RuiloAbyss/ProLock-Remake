@@ -55,7 +55,7 @@ class ArduinoGenerator:
             return False
 
         for quad in self.intermediate_code:
-            op, arg1, arg2, res = quad
+            op, arg1, arg2, res = quad #Identifica que se haya instanciadio el reloj en el código
             if "TIME" in str(arg1) or "TIME" in str(arg2) or "TIME" in str(res):
                 self.uses_clock = True
             if op == 'ASSIGN' and res:
@@ -71,7 +71,7 @@ class ArduinoGenerator:
                             self.global_vars.add(arg_clean) 
             if res and res.startswith('t'): self.variables.add(res)
 
-    def get_template_head(self):
+    def get_template_head(self): #Agrega definicion para uso de reloj si es necesario
         clock_def = "const boolean ENABLE_CLOCK = true;" if self.uses_clock else "const boolean ENABLE_CLOCK = false;"
 
         return f"""
@@ -94,6 +94,12 @@ char keys[FILAS][COLUMNAS] = {{
 byte pinesFilas[FILAS] = {{0, 1, 2, 3}};    
 byte pinesColumnas[COLUMNAS] = {{4, 5, 6}}; 
 Keypad teclado = Keypad(makeKeymap(keys), pinesFilas, pinesColumnas, FILAS, COLUMNAS);
+
+
+
+
+
+
 
 const int PIN_LOCKED = {PIN_LOCKED_LOGIC};      
 const int PIN_UNLOCKED = {PIN_UNLOCKED_LOGIC};    
@@ -372,11 +378,11 @@ void loop() {
 
     def compile_hex(self, ino_path):
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        cli_path = os.path.join(base_dir, "arduino-cli.exe")
+        cli_path = os.path.join(base_dir, "arduino-cli.exe") #Llama a arduino-cli.exe en el mismo directorio que backend.py
         if not os.path.exists(cli_path): return False, "Falta arduino-cli.exe"
         fqbn = "arduino:avr:uno" 
         cmd = [cli_path, "compile", "--fqbn", fqbn, "--export-binaries", ino_path]
-        try:
+        try: #Intenta compilar y captura la salida de arduino (INO) a HEX para subir al Arduino
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             for line in process.stdout: 
                 if line.strip(): print(f"[ARDUINO] {line.strip()}")

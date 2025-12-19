@@ -320,7 +320,7 @@ class CompilerGUI:
         if not hasattr(self, 'intermediate_code_generator') or not self.intermediate_code_generator:
              messagebox.showerror("Error", "Primero debes compilar el código exitosamente.")
              return
-        
+    
         # 1. Guardar el archivo .ino
         archivo_usuario = filedialog.asksaveasfilename(
             defaultextension=".ino",
@@ -330,26 +330,22 @@ class CompilerGUI:
         )
 
         if not archivo_usuario: return
-
         cuadruplos = self.intermediate_code_generator.codigo_intermedio
         try:
-            # 2. Generar el código C++ (.ino)
-            generator = GNCO.ArduinoGenerator(cuadruplos)
+            # 2. Generar el código (.ino)
+            generator = GNCO.ArduinoGenerator(cuadruplos) ######
             filepath = generator.generate(ruta_personalizada=archivo_usuario)
-            
             # 3. PREGUNTAR si quiere compilar a .HEX de una vez
             resp = messagebox.askyesno("Compilación Automática", 
                                        f"Código .ino generado correctamente.\n\n"
                                        "¿Deseas generar también el archivo .HEX para Proteus automáticamente?\n"
                                        "(Requiere arduino-cli.exe en la carpeta del proyecto)")
-            
             if resp:
                 self.console_area.config(state=tk.NORMAL)
                 self.console_area.insert(tk.END, "\n--- Iniciando Compilación Arduino (HEX) ---\n", 'info')
                 self.console_area.update() # Forzar actualización visual
-                
                 # Llamar al backend para compilar a .HEX
-                exito, mensaje = generator.compile_hex(filepath)
+                exito, mensaje = generator.compile_hex(filepath) #######
                 
                 if exito:
                     self.console_area.insert(tk.END, mensaje + "\n", 'success')
@@ -357,11 +353,9 @@ class CompilerGUI:
                 else:
                     self.console_area.insert(tk.END, mensaje + "\n", 'error')
                     messagebox.showerror("Error de Compilación", "No se pudo generar el .hex. Revisa la consola.")
-                
                 self.console_area.config(state=tk.DISABLED)
             else:
                  messagebox.showinfo("Éxito", f"Código guardado en: {filepath}")
-
         except Exception as e:
             messagebox.showerror("Error", f"Falló la generación: {e}")
 
@@ -369,17 +363,14 @@ class CompilerGUI:
         if not hasattr(self, 'intermediate_code_generator') or self.intermediate_code_generator is None:
             messagebox.showerror("Error", "Debes compilar primero.")
             return
-        
         codigo_intermedio = self.intermediate_code_generator.codigo_intermedio
         if not codigo_intermedio:
             messagebox.showinfo("Error", "Lista de código vacía.")
             return
-
         output_base_name = "codigo_intermedio"
         if self.current_filepath:
             base = os.path.basename(self.current_filepath)
             output_base_name = os.path.splitext(base)[0]
-        
         directorio_salida = "CIs"
         os.makedirs(directorio_salida, exist_ok=True)
         nombre_archivo = os.path.join(directorio_salida, f"{output_base_name}_C3D.csv")
